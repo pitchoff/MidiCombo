@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hard rock for MidiCombo. See country.xml for the pattern characters.
+
+  The comp part plays power chords (voicing="power": root, fifth and
+  octave in a low guitar register) on a distorted guitar. Chords sound
+  best written as plain triads or power chords (E, A5, Dm); the third is
+  left out anyway.
+-->
+<midicombo-styles version="1">
+
+    <!-- Driving eighth-note bass, syncopated guitar riff, organ available as pad. -->
+    <style name="Hard Rock">
+        <meter beats="4" steps-per-beat="2" bars="2"/>
+        <tempo>126</tempo>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="closed-hat">XxXx XxXx | XxXx XxXx</row>
+            <row drum="snare">     ..X. ..X. | ..X. ..X.</row>
+            <row drum="kick">      X..X X... | X..X X.x.</row>
+        </drums>
+        <fill>
+            <row drum="snare">    xxXx ....</row>
+            <row drum="high-tom"> .... Xx..</row>
+            <row drum="floor-tom">.... ..XX</row>
+            <row drum="kick">     X... X...</row>
+        </fill>
+        <bass program="34" velocity="104">RRRR RRRR | RRRR RR5A</bass>
+        <comp program="29" velocity="92" voicing="power">C--C --C- | C--C -.C.</comp>
+        <pad program="18" enabled="false"/>
+    </style>
+
+</midicombo-styles>

@@ -67,8 +67,8 @@ Loaded Styles** goes back to the built-in set. A loaded style with the same
 name as an existing one replaces it, so built-in styles can be overridden.
 
 `examples/styles/` contains Country Two-Step, Country Train Beat, Cha-Cha,
-Samba, 12/8 Slow Blues, 6/8 Folk and Disco (installed to
-`share/midicombo/styles`).
+Samba, 12/8 Slow Blues, 6/8 Folk, Disco, Hard Rock, Heavy Metal, Heavy Metal
+(Double Bass) and Symphonic Rock (installed to `share/midicombo/styles`).
 
 ```xml
 <midicombo-styles version="1">
@@ -105,7 +105,8 @@ Samba, 12/8 Slow Blues, 6/8 Folk and Disco (installed to
 - Bass: `R` root, `3` `5` `6` `7` `8` chord degrees, `A` chromatic approach
   to the next chord, `-` hold, `.` rest.
 - Comp: `C`/`c` full chord loud/soft, `1`–`9` single chord tones (arpeggio),
-  `-` hold, `.` rest.
+  `-` hold, `.` rest. `<comp voicing="power">` plays power chords (root,
+  fifth, octave in guitar range) instead of close-position chords.
 - `program` is the GM program number counted from 0. A missing `<bass>` or
   `<comp>` makes that part rest.
 - Errors are reported with the line number, e.g. *"bass pattern has 7 steps,

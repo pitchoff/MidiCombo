@@ -195,12 +195,15 @@ void BandEngine::run(bool countIn)
     int bar = countIn ? -1 : 0;
 
     while (m_running) {
+        const auto previousStyle = m_tStyle;
         {
             // Style and progression changes take effect at bar boundaries.
             std::lock_guard<std::mutex> lock(m_mutex);
             m_tStyle = m_style;
             m_tProgression = m_progression;
         }
+        if (m_tStyle != previousStyle && m_tChord.isValid())
+            voiceComp(); // the new style may voice chords differently
         const int beats = m_tStyle->beatsPerBar;
         for (int beat = 0; beat < beats && m_running; ++beat) {
             const double beatSeconds = 60.0 / std::clamp(m_tempo.load(), 20, 400);
@@ -269,7 +272,7 @@ void BandEngine::processTick(int bar, int beat, int tick)
     if (changed) {
         m_tChord = chord;
         if (chord.isValid()) {
-            m_tCompVoicing = voiceChord(chord, m_tCompVoicing, 52, 76);
+            voiceComp();
             m_tPadVoicing = voiceChord(chord, m_tPadVoicing, 55, 81);
         }
         emit chordChanged(QString::fromStdString(chord.name()));
@@ -366,6 +369,16 @@ int BandEngine::bassNote(char token, int bar, int nextTick)
         return std::abs(target - 1 - ref) <= std::abs(target + 1 - ref) ? target - 1 : target + 1;
     }
     default: return -1;
+    }
+}
+
+void BandEngine::voiceComp()
+{
+    if (m_tStyle->powerChords) {
+        const int root = 40 + (m_tChord.root - 4 + 12) % 12; // E2 .. D#3
+        m_tCompVoicing = {root, root + m_tChord.fifth(), root + 12};
+    } else {
+        m_tCompVoicing = voiceChord(m_tChord, m_tCompVoicing, 52, 76);
     }
 }
 

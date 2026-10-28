@@ -24,6 +24,7 @@
 //     </fill>
 //     <bass program="32" velocity="96">R-.. 5-.. | R-.. 5-A-</bass>
 //     <comp program="25" velocity="78">..C- ..C- | ..C- ..C-</comp>
+//                                           <!-- voicing="power": root, fifth, octave -->
 //     <pad program="22" enabled="false"/>
 //   </style>
 // </midicombo-styles>

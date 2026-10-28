@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Heavy metal styles for MidiCombo. See country.xml for the pattern characters.
+
+  The comp part plays power chords (voicing="power": root, fifth and
+  octave in a low guitar register) on a distorted guitar. Chords sound
+  best written as plain triads or power chords (E, A5, Dm); the third is
+  left out anyway.
+-->
+<midicombo-styles version="1">
+
+    <!-- The classic gallop (eighth plus two sixteenths) in kick, bass and guitar. -->
+    <style name="Heavy Metal">
+        <meter beats="4" steps-per-beat="4"/>
+        <tempo>150</tempo>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="ride"> X... X... X... X...</row>
+            <row drum="snare">.... X... .... X...</row>
+            <row drum="kick"> X.xx X.xx X.xx X.xx</row>
+        </drums>
+        <fill>
+            <row drum="high-tom"> xxxx .... .... ....</row>
+            <row drum="mid-tom">  .... xxxx .... ....</row>
+            <row drum="floor-tom">.... .... xxxx ....</row>
+            <row drum="snare">    .... .... .... XXXX</row>
+            <row drum="kick">     X... X... X... X...</row>
+        </fill>
+        <bass program="34" velocity="108">R-RR R-RR R-RR R-RR</bass>
+        <comp program="30" velocity="96" voicing="power">C-cc C-cc C-cc C-cc</comp>
+        <pad program="48" enabled="false"/>
+    </style>
+
+    <!-- Continuous sixteenth notes on the bass drums, china on the quarters. -->
+    <style name="Heavy Metal (Double Bass)">
+        <meter beats="4" steps-per-beat="4"/>
+        <tempo>160</tempo>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="china">X... x... X... x...</row>
+            <row drum="snare">.... X... .... X...</row>
+            <row drum="kick"> Xxxx xxxx Xxxx xxxx</row>
+        </drums>
+        <fill>
+            <row drum="snare">    xxxx XxXx .... ....</row>
+            <row drum="high-tom"> .... .... xx.. ....</row>
+            <row drum="mid-tom">  .... .... ..xx ....</row>
+            <row drum="floor-tom">.... .... .... xxXX</row>
+            <row drum="kick">     Xxxx xxxx Xxxx xxxx</row>
+        </fill>
+        <bass program="34" velocity="106">R-R- R-R- R-R- R-R-</bass>
+        <comp program="30" velocity="96" voicing="power">C--- C-c- C--- C-cc</comp>
+        <pad program="48" enabled="false"/>
+    </style>
+
+</midicombo-styles>

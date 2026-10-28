@@ -34,6 +34,7 @@ struct Style {
     std::vector<DrumRow> fill;
     std::string bass;
     std::string comp;
+    bool powerChords = false; // comp plays root, fifth and octave in guitar range
 
     int pianoProgram = 0;
     int bassProgram = 33;

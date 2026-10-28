@@ -65,6 +65,7 @@ int main()
         }
     }
     check(names.count("6/8 Folk") && names.count("Samba") && names.count("Disco"), "expected example styles");
+    check(names.count("Hard Rock") && names.count("Heavy Metal") && names.count("Symphonic Rock"), "rock example styles");
 
     // Values are read correctly.
     QTemporaryDir dir;
@@ -86,6 +87,7 @@ int main()
         check(s.bass == "R--5--3--R--5--A--" && s.bassProgram == 35 && s.bassVelocity == 90, "bass");
         check(s.comp == std::string(18, '.'), "missing comp part rests");
         check(s.padDefault && s.padProgram == 50, "pad");
+        check(!s.powerChords, "close voicing by default");
     }
 
     // Errors
@@ -102,6 +104,11 @@ int main()
     fails(dir, styleFile("<meter beats=\"0\"/>"), "zero beats");
     fails(dir, styleFile("<tempo>fast</tempo>"), "non-numeric tempo");
     fails(dir, styleFile("<swing amount=\"30\" unit=\"12\"/>"), "bad swing unit");
+    fails(dir, styleFile("<comp voicing=\"open\">C-C-C-C-</comp>"), "unknown comp voicing");
+
+    const QString power = writeText(dir, QStringLiteral("power.xml"),
+                                    styleFile("<comp voicing=\"power\">C-C-C-C-</comp>"));
+    check(readStyleFile(power, styles, error) && styles.size() == 1 && styles[0].powerChords, "power voicing");
 
     std::vector<mc::Style> lengthErr;
     readStyleFile(writeText(dir, QStringLiteral("len.xml"), styleFile("<bass>R-5-</bass>")), lengthErr, error);

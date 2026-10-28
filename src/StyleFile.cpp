@@ -117,6 +117,11 @@ mc::Style readStyle(QXmlStreamReader &xml)
         } else if (name == QLatin1String("comp")) {
             s.pianoProgram = intAttr(xml, "program", s.pianoProgram, 0, 127);
             s.compVelocity = intAttr(xml, "velocity", s.compVelocity, 1, 127);
+            const auto voicing = xml.attributes().value(QLatin1String("voicing"));
+            if (voicing == QLatin1String("power"))
+                s.powerChords = true;
+            else if (!voicing.isEmpty() && voicing != QLatin1String("close"))
+                xml.raiseError(QStringLiteral("<comp voicing> must be \"close\" or \"power\""));
             s.comp = xml.readElementText().toStdString();
         } else if (name == QLatin1String("pad")) {
             s.padProgram = intAttr(xml, "program", s.padProgram, 0, 127);

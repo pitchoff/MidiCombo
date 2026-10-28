@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Symphonic rock for MidiCombo. See country.xml for the pattern characters.
+
+  The comp part plays power chords (voicing="power": root, fifth and
+  octave in a low guitar register) on a distorted guitar. Chords sound
+  best written as plain triads or power chords (E, A5, Dm); the third is
+  left out anyway.
+-->
+<midicombo-styles version="1">
+
+    <!--
+      Half-time drums, long power chords and a string section on the pad.
+      For a choir instead of strings, set the pad to "53 Choir Aahs".
+    -->
+    <style name="Symphonic Rock">
+        <meter beats="4" steps-per-beat="2" bars="2"/>
+        <tempo>92</tempo>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="ride"> x.x. x.x. | x.x. x.x.</row>
+            <row drum="snare">.... X... | .... X...</row>
+            <row drum="kick"> X..X ..X. | X..X ....</row>
+        </drums>
+        <fill>
+            <row drum="high-tom"> xx.. ....</row>
+            <row drum="mid-tom">  ..xx ....</row>
+            <row drum="floor-tom">.... xxXX</row>
+            <row drum="kick">     X... X...</row>
+        </fill>
+        <bass program="34" velocity="100">R-R- R-R- | R-R- 5-A-</bass>
+        <comp program="29" velocity="88" voicing="power">C--- ---- | C--- --C-</comp>
+        <pad program="48" enabled="true"/>
+    </style>
+
+</midicombo-styles>

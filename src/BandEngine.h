@@ -66,6 +66,7 @@ private:
     bool playBassStep(int patternStep, int bar, int barTick, int stepTicks, bool downbeat);
     bool playCompStep(int patternStep, int stepTicks);
     int bassNote(char token, int bar, int nextTick);
+    void voiceComp();
     void retrigger(Part part);
     void startPad();
 
