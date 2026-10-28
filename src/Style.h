@@ -47,6 +47,8 @@ struct Style {
 };
 
 const std::vector<Style> &builtinStyles();
+// Removes the whitespace and '|' that patterns may contain for readability.
+Style normalizedStyle(Style style);
 bool validateStyle(const Style &style, std::string &error);
 
 } // namespace mc

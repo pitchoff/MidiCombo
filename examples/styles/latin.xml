@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Latin styles for MidiCombo. See country.xml for the pattern characters. -->
+<midicombo-styles version="1">
+
+    <!-- "One, two, cha-cha-cha": the congas play the cha-cha on 4-and-1. -->
+    <style name="Cha-Cha">
+        <meter beats="4" steps-per-beat="2"/>
+        <tempo>120</tempo>
+        <crash drum="none"/>
+        <drums>
+            <row drum="cowbell">   X.x. X.x.</row>
+            <row drum="side-stick">..x. ..x.</row>
+            <row drum="high-conga">...x ....</row>
+            <row drum="low-conga"> .... ..xx</row>
+            <row drum="short-guiro">x.x. x.x.</row>
+            <row drum="kick">      X... X...</row>
+        </drums>
+        <bass program="32" velocity="98">R--. 5-5.</bass>
+        <comp program="0" velocity="76"> C-.c C-.c</comp>
+        <pad program="61" enabled="false"/>
+    </style>
+
+    <!-- Samba: surdo on the kick, shaker 16ths, syncopated guitar. -->
+    <style name="Samba">
+        <meter beats="4" steps-per-beat="4"/>
+        <tempo>100</tempo>
+        <crash drum="none"/>
+        <drums>
+            <row drum="shaker">    Xxox Xxox Xxox Xxox</row>
+            <row drum="side-stick">x.x. .x.x .x.. x.x.</row>
+            <row drum="kick">      o..x X... o..x X...</row>
+            <row drum="high-agogo">x... .... ..x. ....</row>
+            <row drum="low-agogo"> .... x.x. .... x...</row>
+        </drums>
+        <fill>
+            <row drum="shaker">    Xxox Xxox .... ....</row>
+            <row drum="high-timbale">.... .... xxxx xx..</row>
+            <row drum="low-timbale"> .... .... .... ..xX</row>
+            <row drum="kick">      o..x X... o..x X...</row>
+        </fill>
+        <bass program="32" velocity="100">R--5 5--- R--5 5-A-</bass>
+        <comp program="24" velocity="74"> C.c. .C.c .C.. C.c.</comp>
+        <pad program="48" enabled="false"/>
+    </style>
+
+</midicombo-styles>

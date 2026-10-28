@@ -30,6 +30,7 @@ add_executable(midicombo
     src/BandEngine.cpp
     src/MainWindow.cpp
     src/PresetFile.cpp
+    src/StyleFile.cpp
     src/Widgets.cpp
 )
 target_compile_options(midicombo PRIVATE -Wall -Wextra)
@@ -45,4 +46,10 @@ target_include_directories(test_presets PRIVATE src)
 target_link_libraries(test_presets PRIVATE Qt6::Core)
 add_test(NAME presets COMMAND test_presets)
 
+add_executable(test_styles tests/test_styles.cpp src/StyleFile.cpp)
+target_compile_definitions(test_styles PRIVATE EXAMPLES_DIR="${CMAKE_SOURCE_DIR}/examples")
+target_link_libraries(test_styles PRIVATE midicombo_core Qt6::Core)
+add_test(NAME styles COMMAND test_styles)
+
 install(TARGETS midicombo RUNTIME DESTINATION bin)
+install(DIRECTORY examples/styles/ DESTINATION share/midicombo/styles)

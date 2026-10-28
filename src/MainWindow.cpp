@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include "MidiEngine.h"
+#include "StyleFile.h"
 #include "Widgets.h"
 
 #include <QAction>
@@ -62,6 +63,7 @@ MainWindow::MainWindow(MidiEngine *midi, QWidget *parent)
     : QMainWindow(parent)
     , m_midi(midi)
     , m_engine(new BandEngine(midi, this))
+    , m_styles(mc::builtinStyles())
 {
     buildUi();
 
@@ -110,7 +112,7 @@ void MainWindow::buildUi()
 
     tb->addWidget(new QLabel(tr(" Style ")));
     m_styleCombo = new QComboBox;
-    for (const auto &s : mc::builtinStyles())
+    for (const auto &s : m_styles)
         m_styleCombo->addItem(QString::fromStdString(s.name));
     tb->addWidget(m_styleCombo);
     connect(m_styleCombo, &QComboBox::currentIndexChanged, this, &MainWindow::onStyleChanged);
@@ -144,6 +146,9 @@ void MainWindow::buildUi()
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(tr("&Open Presets…"), QKeySequence::Open, this, &MainWindow::openPresetFile);
     fileMenu->addAction(tr("&Save Preset As…"), QKeySequence::Save, this, &MainWindow::savePresetFile);
+    fileMenu->addSeparator();
+    fileMenu->addAction(tr("Load St&yles…"), QKeySequence(Qt::CTRL | Qt::Key_L), this, &MainWindow::openStyleFile);
+    fileMenu->addAction(tr("&Forget Loaded Styles"), this, &MainWindow::forgetLoadedStyles);
     fileMenu->addSeparator();
     fileMenu->addAction(tr("&Quit"), QKeySequence::Quit, this, &QWidget::close);
     QMenu *bandMenu = menuBar()->addMenu(tr("&Band"));
@@ -419,7 +424,7 @@ void MainWindow::startBand(bool countIn)
     if (m_outputId.isEmpty())
         statusBar()->showMessage(tr("No MIDI output connected – see Help ▸ Sound Setup"), 6000);
 
-    m_engine->setStyle(mc::builtinStyles()[m_styleCombo->currentIndex()]);
+    m_engine->setStyle(currentStyle());
     m_engine->setTempo(m_tempo->value());
     m_engine->setSwing(m_swing->value() / 100.0);
     m_engine->setMode(currentMode());
@@ -471,13 +476,106 @@ void MainWindow::onStyleChanged(int index)
 {
     if (index < 0)
         return;
-    const mc::Style &s = mc::builtinStyles()[index];
+    const mc::Style &s = m_styles[index];
     m_engine->setStyle(s);
     m_swing->setValue(qRound(s.swing * 100));
     m_parts[BandEngine::Piano].program->setCurrentIndex(s.pianoProgram);
     m_parts[BandEngine::Bass].program->setCurrentIndex(s.bassProgram);
     m_parts[BandEngine::Pad].program->setCurrentIndex(s.padProgram);
     m_parts[BandEngine::Pad].enabled->setChecked(s.padDefault);
+}
+
+const mc::Style &MainWindow::currentStyle() const
+{
+    return m_styles[std::max(0, m_styleCombo->currentIndex())];
+}
+
+// Adds a style, or replaces the style with the same name (built-in styles
+// can be overridden this way).
+void MainWindow::addStyle(const mc::Style &style)
+{
+    for (size_t i = 0; i < m_styles.size(); ++i) {
+        if (m_styles[i].name == style.name) {
+            m_styles[i] = style;
+            if (static_cast<int>(i) == m_styleCombo->currentIndex())
+                m_engine->setStyle(style);
+            return;
+        }
+    }
+    m_styles.push_back(style);
+    m_styleCombo->addItem(QString::fromStdString(style.name));
+}
+
+// Returns the number of styles loaded, 0 on error.
+int MainWindow::loadStyleFile(const QString &path, bool interactive, QString *firstName)
+{
+    std::vector<mc::Style> styles;
+    QString error;
+    if (!readStyleFile(path, styles, error)) {
+        const QString message = tr("Could not load styles from %1:\n%2").arg(path, error);
+        if (interactive)
+            QMessageBox::warning(this, tr("Load Styles"), message);
+        else
+            statusBar()->showMessage(message.simplified(), 8000);
+        return 0;
+    }
+    for (const auto &style : styles)
+        addStyle(style);
+    if (firstName)
+        *firstName = QString::fromStdString(styles.front().name);
+    const QString absolute = QFileInfo(path).absoluteFilePath();
+    if (!m_styleFiles.contains(absolute))
+        m_styleFiles.append(absolute);
+    return static_cast<int>(styles.size());
+}
+
+void MainWindow::openStyleFile()
+{
+    QSettings settings;
+    QString dir = settings.value("styleDir").toString();
+    if (dir.isEmpty()) {
+        // Start in the example styles, both in a build tree and when installed.
+        const QString appDir = QCoreApplication::applicationDirPath();
+        for (const QString &candidate : {appDir + "/../examples/styles", appDir + "/../share/midicombo/styles"}) {
+            if (QFileInfo(candidate).isDir()) {
+                dir = QDir(candidate).absolutePath();
+                break;
+            }
+        }
+    }
+    const QStringList paths = QFileDialog::getOpenFileNames(this, tr("Load Styles"),
+                                                            dir.isEmpty() ? QDir::homePath() : dir,
+                                                            tr("MidiCombo styles (*.xml);;All files (*)"));
+    if (paths.isEmpty())
+        return;
+    settings.setValue("styleDir", QFileInfo(paths.first()).absolutePath());
+
+    int loaded = 0;
+    QString first;
+    for (const QString &path : paths)
+        loaded += loadStyleFile(path, true, first.isEmpty() ? &first : nullptr);
+    if (loaded > 0) {
+        // Select the first loaded style so it can be tried right away.
+        m_styleCombo->setCurrentIndex(m_styleCombo->findText(first));
+        statusBar()->showMessage(tr("Loaded %n style(s)", nullptr, loaded), 4000);
+    }
+}
+
+void MainWindow::forgetLoadedStyles()
+{
+    const QString current = m_styleCombo->currentText();
+    m_styleFiles.clear();
+    m_styles = mc::builtinStyles();
+    {
+        QSignalBlocker block(m_styleCombo);
+        m_styleCombo->clear();
+        for (const auto &s : m_styles)
+            m_styleCombo->addItem(QString::fromStdString(s.name));
+    }
+    const int idx = m_styleCombo->findText(current);
+    m_styleCombo->setCurrentIndex(std::max(idx, 0));
+    onStyleChanged(m_styleCombo->currentIndex());
+    statusBar()->showMessage(tr("Removed all loaded styles"), 4000);
 }
 
 void MainWindow::onPresetChosen(int index)
@@ -776,10 +874,14 @@ void MainWindow::updateDetection()
 void MainWindow::loadSettings()
 {
     QSettings s;
-    m_styleCombo->setCurrentIndex(std::clamp(s.value("style", 0).toInt(), 0, m_styleCombo->count() - 1));
+    const QStringList styleFiles = s.value("styleFiles").toStringList();
+    for (const QString &path : styleFiles)
+        loadStyleFile(path, false);
+
+    m_styleCombo->setCurrentIndex(std::max(0, m_styleCombo->findText(s.value("styleName").toString())));
     onStyleChanged(m_styleCombo->currentIndex()); // apply defaults even when the index did not change
 
-    m_tempo->setValue(s.value("tempo", mc::builtinStyles()[m_styleCombo->currentIndex()].tempo).toInt());
+    m_tempo->setValue(s.value("tempo", currentStyle().tempo).toInt());
     if (s.contains("swing"))
         m_swing->setValue(s.value("swing").toInt());
     m_countIn->setChecked(s.value("countIn", true).toBool());
@@ -828,7 +930,8 @@ void MainWindow::loadSettings()
 void MainWindow::saveSettings()
 {
     QSettings s;
-    s.setValue("style", m_styleCombo->currentIndex());
+    s.setValue("styleName", m_styleCombo->currentText());
+    s.setValue("styleFiles", m_styleFiles);
     s.setValue("tempo", m_tempo->value());
     s.setValue("swing", m_swing->value());
     s.setValue("countIn", m_countIn->isChecked());

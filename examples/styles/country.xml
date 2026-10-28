@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Country styles for MidiCombo.
+
+  Pattern characters
+    drums: X accent, x normal, o soft, g ghost, . rest
+    bass:  R root, 3 third, 5 fifth, 6 sixth, 7 seventh, 8 octave,
+           A chromatic approach to the next chord, - hold, . rest
+    comp:  C chord accented, c chord soft, 1-9 single chord tone, - hold, . rest
+  Spaces and | are only for readability.
+-->
+<midicombo-styles version="1">
+
+    <!-- Boom-chick: alternating root/fifth bass, guitar on 2 and 4. -->
+    <style name="Country Two-Step">
+        <meter beats="4" steps-per-beat="2" bars="2"/>
+        <tempo>160</tempo>
+        <swing amount="20"/>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="closed-hat">XoXo XoXo | XoXo XoXo</row>
+            <row drum="snare">     ..X. ..X. | ..X. ..X.</row>
+            <row drum="kick">      X... X... | X... X...</row>
+        </drums>
+        <fill>
+            <row drum="snare">    ..x. xxXX</row>
+            <row drum="kick">     X... X...</row>
+        </fill>
+        <bass program="33" velocity="100">R-.. 5-.. | R-.. 5-A-</bass>
+        <comp program="25" velocity="80"> ..C. ..C. | ..C. ..C.</comp>
+        <pad program="22" enabled="false"/>
+    </style>
+
+    <!-- Train beat: 16th notes on the snare with accents on 2 and 4. -->
+    <style name="Country Train Beat">
+        <meter beats="4" steps-per-beat="4"/>
+        <tempo>150</tempo>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="snare">ooxo Xoxo ooxo Xoxo</row>
+            <row drum="kick"> X... .... X... ....</row>
+        </drums>
+        <fill>
+            <row drum="snare">    xxxx XxXx XXXX XXXX</row>
+            <row drum="floor-tom">.... .... .... ...X</row>
+            <row drum="kick">     X... .... X... ....</row>
+        </fill>
+        <bass program="32" velocity="96">R--- .... 5--- ....</bass>
+        <comp program="25" velocity="76">.... C-.. .... C-..</comp>
+        <pad program="22" enabled="false"/>
+    </style>
+
+</midicombo-styles>

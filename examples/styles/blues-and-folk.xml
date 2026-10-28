@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Triplet-based styles for MidiCombo. See country.xml for the pattern characters.
+
+  With steps-per-beat="3" every beat is split into eighth-note triplets,
+  so 12/8 is written as 4 beats of 3 steps and 6/8 as 2 beats of 3 steps.
+  Set the tempo for the dotted quarter.
+-->
+<midicombo-styles version="1">
+
+    <!-- Slow blues with piano triplets and an organ pad. -->
+    <style name="12/8 Slow Blues">
+        <meter beats="4" steps-per-beat="3"/>
+        <tempo>56</tempo>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="ride"> Xoo xoo Xoo xoo</row>
+            <row drum="snare">... X.. ... X..</row>
+            <row drum="kick"> X.. ..x X.. ...</row>
+        </drums>
+        <fill>
+            <row drum="ride">    Xoo xoo ... ...</row>
+            <row drum="snare">   ... X.. xxx ...</row>
+            <row drum="high-tom">... ... ... xx.</row>
+            <row drum="floor-tom">... ... ... ..X</row>
+            <row drum="kick">    X.. ... X.. ...</row>
+        </fill>
+        <bass program="33" velocity="94">R-3 5-6 8-6 5-3</bass>
+        <comp program="0" velocity="66"> ccc Ccc ccc Ccc</comp>
+        <pad program="16" enabled="true"/>
+    </style>
+
+    <!-- Gentle 6/8 with an arpeggiated acoustic guitar and no fills. -->
+    <style name="6/8 Folk">
+        <meter beats="2" steps-per-beat="3"/>
+        <tempo>66</tempo>
+        <crash drum="none"/>
+        <drums>
+            <row drum="closed-hat">xox xox</row>
+            <row drum="side-stick">... x..</row>
+            <row drum="kick">      X.. ...</row>
+        </drums>
+        <bass program="32" velocity="90">R-- 5--</bass>
+        <comp program="25" velocity="72">123 432</comp>
+        <pad program="48" enabled="false"/>
+    </style>
+
+</midicombo-styles>

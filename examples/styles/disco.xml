@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Disco for MidiCombo. See country.xml for the pattern characters. -->
+<midicombo-styles version="1">
+
+    <!-- Four on the floor, open hi-hat on the off-beats, octave bass, strings. -->
+    <style name="Disco">
+        <meter beats="4" steps-per-beat="4"/>
+        <tempo>118</tempo>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="kick">      X... X... X... X...</row>
+            <row drum="clap">      .... X... .... X...</row>
+            <row drum="closed-hat">x... x... x... x...</row>
+            <row drum="open-hat">  ..X. ..X. ..X. ..X.</row>
+            <row drum="tambourine">.x.x .x.x .x.x .x.x</row>
+        </drums>
+        <fill>
+            <row drum="kick"> X... X... X... X...</row>
+            <row drum="snare">.... .... xxxx XXXX</row>
+        </fill>
+        <bass program="38" velocity="100">R.8. R.8. R.8. R.8A</bass>
+        <comp program="4" velocity="74">  .... ..C. .... ..C.</comp>
+        <pad program="48" enabled="true"/>
+    </style>
+
+</midicombo-styles>

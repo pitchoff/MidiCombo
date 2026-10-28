@@ -1,6 +1,7 @@
 #include "Style.h"
 
 #include <algorithm>
+#include <cctype>
 
 namespace mc {
 
@@ -13,21 +14,11 @@ enum Drum {
     Crash = 49, Ride = 51, Shaker = 70,
 };
 
-// Patterns may contain spaces and '|' for readability.
+// Patterns may contain whitespace and '|' for readability.
 std::string strip(std::string s)
 {
-    s.erase(std::remove_if(s.begin(), s.end(), [](char c) { return c == ' ' || c == '|'; }), s.end());
-    return s;
-}
-
-Style normalized(Style s)
-{
-    for (auto &r : s.drums)
-        r.steps = strip(r.steps);
-    for (auto &r : s.fill)
-        r.steps = strip(r.steps);
-    s.bass = strip(s.bass);
-    s.comp = strip(s.comp);
+    auto isFiller = [](char c) { return std::isspace(static_cast<unsigned char>(c)) || c == '|'; };
+    s.erase(std::remove_if(s.begin(), s.end(), isFiller), s.end());
     return s;
 }
 
@@ -228,11 +219,22 @@ std::vector<Style> makeStyles()
     }
 
     for (auto &s : styles)
-        s = normalized(s);
+        s = normalizedStyle(s);
     return styles;
 }
 
 } // namespace
+
+Style normalizedStyle(Style s)
+{
+    for (auto &r : s.drums)
+        r.steps = strip(r.steps);
+    for (auto &r : s.fill)
+        r.steps = strip(r.steps);
+    s.bass = strip(s.bass);
+    s.comp = strip(s.comp);
+    return s;
+}
 
 const std::vector<Style> &builtinStyles()
 {
@@ -248,17 +250,20 @@ bool validateStyle(const Style &s, std::string &error)
     };
     if (s.stepsPerBeat <= 0 || 12 % s.stepsPerBeat != 0)
         return fail("stepsPerBeat must divide 12");
-    const size_t steps = static_cast<size_t>(s.stepCount());
+    auto length = [](const std::string &what, size_t got, int expected) {
+        return what + " has " + std::to_string(got) + " steps, expected " + std::to_string(expected);
+    };
+    const int steps = s.stepCount();
     for (const auto &r : s.drums)
-        if (r.steps.size() != steps)
-            return fail("drum row " + std::to_string(r.note) + " has wrong length");
+        if (static_cast<int>(r.steps.size()) != steps)
+            return fail(length("drum row " + std::to_string(r.note), r.steps.size(), steps));
     for (const auto &r : s.fill)
-        if (r.steps.size() != static_cast<size_t>(s.stepsPerBar()))
-            return fail("fill row " + std::to_string(r.note) + " has wrong length");
-    if (s.bass.size() != steps)
-        return fail("bass pattern has wrong length");
-    if (s.comp.size() != steps)
-        return fail("comp pattern has wrong length");
+        if (static_cast<int>(r.steps.size()) != s.stepsPerBar())
+            return fail(length("fill row " + std::to_string(r.note), r.steps.size(), s.stepsPerBar()));
+    if (static_cast<int>(s.bass.size()) != steps)
+        return fail(length("bass pattern", s.bass.size(), steps));
+    if (static_cast<int>(s.comp.size()) != steps)
+        return fail(length("comp pattern", s.comp.size(), steps));
     return true;
 }
 

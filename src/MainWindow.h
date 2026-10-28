@@ -5,6 +5,7 @@
 #include "PresetFile.h"
 
 #include <QList>
+#include <QStringList>
 #include <QMainWindow>
 
 #include <set>
@@ -57,6 +58,11 @@ private:
     int addPreset(const PresetData &preset);
     void openPresetFile();
     void savePresetFile();
+    void openStyleFile();
+    int loadStyleFile(const QString &path, bool interactive, QString *firstName = nullptr);
+    void addStyle(const mc::Style &style);
+    void forgetLoadedStyles();
+    const mc::Style &currentStyle() const;
     bool applyProgression();
     ChordMode currentMode() const;
 
@@ -84,6 +90,8 @@ private:
     BandEngine *m_engine;
     mc::ChordDetector m_detector;
     mc::Progression m_progression;
+    std::vector<mc::Style> m_styles; // built-in styles first, then styles loaded from files
+    QStringList m_styleFiles;
     QList<PresetData> m_presets; // built-in presets first, then presets loaded from files
 
     // Transport

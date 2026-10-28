@@ -57,8 +57,59 @@ program number counted from 0 (for drums, the drum kit number).
 ## Styles
 
 Pop Rock, Ballad, Swing Jazz, Bossa Nova, Funk, Waltz (3/4), Reggae,
-Shuffle Blues. Styles are defined as step patterns in `src/Style.cpp`; the
-format is documented in `src/Style.h`.
+Shuffle Blues. They are defined as step patterns in `src/Style.cpp`.
+
+### Style files
+
+More styles can be loaded from XML with **File ▸ Load Styles…** (Ctrl+L).
+Loaded files are reloaded automatically on the next start. **File ▸ Forget
+Loaded Styles** goes back to the built-in set. A loaded style with the same
+name as an existing one replaces it, so built-in styles can be overridden.
+
+`examples/styles/` contains Country Two-Step, Country Train Beat, Cha-Cha,
+Samba, 12/8 Slow Blues, 6/8 Folk and Disco (installed to
+`share/midicombo/styles`).
+
+```xml
+<midicombo-styles version="1">
+    <style name="Country Two-Step">
+        <meter beats="4" steps-per-beat="2" bars="2"/>
+        <tempo>160</tempo>
+        <swing amount="20" unit="8"/>        <!-- percent; unit 8 or 16 -->
+        <crash drum="crash"/>                <!-- drum="none": no crash -->
+        <drums>
+            <row drum="closed-hat">XoXo XoXo | XoXo XoXo</row>
+            <row drum="snare">     ..X. ..X. | ..X. ..X.</row>
+            <row note="36">        X... X... | X... X...</row>
+        </drums>
+        <fill>                               <!-- optional, exactly one bar -->
+            <row drum="snare">..x. xxXX</row>
+        </fill>
+        <bass program="33" velocity="100">R-.. 5-.. | R-.. 5-A-</bass>
+        <comp program="25" velocity="80"> ..C. ..C. | ..C. ..C.</comp>
+        <pad program="22" enabled="false"/>
+    </style>
+</midicombo-styles>
+```
+
+- Every pattern has `beats × steps-per-beat × bars` steps. `steps-per-beat`
+  must divide 12: 2 = eighths, 3 = triplets (12/8, 6/8), 4 = sixteenths.
+  Whitespace and `|` are ignored.
+- Drums: `X` accent, `x` normal, `o` soft, `g` ghost, `.` rest. A row names
+  its instrument with `note="38"` or `drum="snare"`. The names are kick,
+  side-stick, snare, clap, closed-hat, pedal-hat, open-hat, low/mid/high-tom,
+  floor-tom, crash, ride, ride-bell, splash, china, tambourine, cowbell,
+  high/low-bongo, high/low/mute-conga, high/low-timbale, high/low-agogo,
+  cabasa, shaker, short/long-guiro, claves, high/low-woodblock and triangle.
+  The full list is in `src/StyleFile.cpp`.
+- Bass: `R` root, `3` `5` `6` `7` `8` chord degrees, `A` chromatic approach
+  to the next chord, `-` hold, `.` rest.
+- Comp: `C`/`c` full chord loud/soft, `1`–`9` single chord tones (arpeggio),
+  `-` hold, `.` rest.
+- `program` is the GM program number counted from 0. A missing `<bass>` or
+  `<comp>` makes that part rest.
+- Errors are reported with the line number, e.g. *"bass pattern has 7 steps,
+  expected 8"*.
 
 ## Build
 
