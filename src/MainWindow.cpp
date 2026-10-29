@@ -472,12 +472,19 @@ void MainWindow::onBandChord(const QString &name)
 
 // ---------------------------------------------------------------- styles and progressions
 
+// While a preset is selected, a style change only switches the patterns and
+// keeps the preset's swing and band settings.
 void MainWindow::onStyleChanged(int index)
 {
     if (index < 0)
         return;
-    const mc::Style &s = m_styles[index];
-    m_engine->setStyle(s);
+    m_engine->setStyle(m_styles[index]);
+    if (m_presetCombo->currentIndex() <= 0)
+        applyStyleDefaults(m_styles[index]);
+}
+
+void MainWindow::applyStyleDefaults(const mc::Style &s)
+{
     m_swing->setValue(qRound(s.swing * 100));
     m_parts[BandEngine::Piano].program->setCurrentIndex(s.pianoProgram);
     m_parts[BandEngine::Bass].program->setCurrentIndex(s.bassProgram);
@@ -588,12 +595,16 @@ void MainWindow::onPresetChosen(int index)
 
 void MainWindow::applyPreset(const PresetData &preset)
 {
-    // The style goes first because it resets swing and instruments to its defaults.
+    // The style defaults go first; the preset's values override them.
     const int styleIdx = m_styleCombo->findText(preset.style);
-    if (styleIdx >= 0)
+    if (styleIdx >= 0) {
+        QSignalBlocker block(m_styleCombo);
         m_styleCombo->setCurrentIndex(styleIdx);
-    else if (!preset.style.isEmpty())
+    } else if (!preset.style.isEmpty()) {
         statusBar()->showMessage(tr("Unknown style '%1' – keeping the current style").arg(preset.style), 5000);
+    }
+    m_engine->setStyle(currentStyle());
+    applyStyleDefaults(currentStyle());
     if (preset.tempo > 0)
         m_tempo->setValue(preset.tempo);
     if (preset.swing >= 0)
@@ -879,7 +890,8 @@ void MainWindow::loadSettings()
         loadStyleFile(path, false);
 
     m_styleCombo->setCurrentIndex(std::max(0, m_styleCombo->findText(s.value("styleName").toString())));
-    onStyleChanged(m_styleCombo->currentIndex()); // apply defaults even when the index did not change
+    m_engine->setStyle(currentStyle());
+    applyStyleDefaults(currentStyle()); // the saved settings below override them
 
     m_tempo->setValue(s.value("tempo", currentStyle().tempo).toInt());
     if (s.contains("swing"))

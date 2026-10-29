@@ -51,7 +51,9 @@ list and the first one is applied. A file can hold several presets:
 ```
 
 Everything except `<progression>` is optional. A missing value keeps the
-style default, so hand-written files can be short. `program` is the GM
+style default, so hand-written files can be short. While a preset is
+selected, switching the style only changes the patterns and keeps the
+preset's swing and band settings. `program` is the GM
 program number counted from 0 (for drums, the drum kit number).
 
 ## Styles

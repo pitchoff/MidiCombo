@@ -152,6 +152,11 @@ file is rejected. Values outside the range are clamped.
 
 An unknown style name shows a message in the status bar and keeps the current style.
 
+While a preset is selected, choosing another style in the toolbar only
+changes the patterns. Tempo, swing and the band settings of the preset stay
+as they are. With no preset selected ("— choose a preset —"), a style
+change applies the style's defaults.
+
 ---
 
 ## 4. Style files
@@ -208,7 +213,8 @@ built-in style. Loaded files are reloaded on the next start.
 `drum="snare"` (see [5.1](#51-drum-names)), and the pattern as text.
 
 `program` and `enabled` are only defaults: they are applied when the style
-is selected, and the user (or a preset) can change them.
+is selected while no preset is active, and the user (or a preset) can
+change them.
 
 ### The step grid
 

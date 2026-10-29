@@ -52,6 +52,7 @@ private:
     void updatePlayActions();
 
     void onStyleChanged(int index);
+    void applyStyleDefaults(const mc::Style &style);
     void onPresetChosen(int index);
     void applyPreset(const PresetData &preset);
     PresetData currentPreset(const QString &name) const;
