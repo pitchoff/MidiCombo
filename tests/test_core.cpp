@@ -88,6 +88,27 @@ int main()
     for (const auto &s : mc::builtinStyles())
         check(mc::validateStyle(s, err), err);
 
+    // Resizing a style keeps steps that fall on the new grid.
+    mc::Style st;
+    st.name = "R";
+    st.beatsPerBar = 2;
+    st.stepsPerBeat = 2;
+    st.bars = 1;
+    st.drums = {{36, "X.x."}};
+    st.fill = {{38, "..xX"}};
+    st.bass = "R-5.";
+    st.comp = "C.c.";
+    mc::Style up = mc::resizedStyle(st, 3, 4, 2);
+    check(mc::validateStyle(up, err), "resized style valid: " + err);
+    check(up.drums[0].steps == "X...x.......X...x.......", "resize drums up: " + up.drums[0].steps);
+    check(up.fill[0].steps == "....x.X.....", "resize fill: " + up.fill[0].steps);
+    check(up.bass == "R---5-......R---5-......", "resize bass up: " + up.bass);
+    mc::Style down = mc::resizedStyle(up, 2, 1, 1);
+    check(down.drums[0].steps == "Xx" && down.bass == "R5", "resize down: " + down.drums[0].steps + " " + down.bass);
+    mc::Style triplet = mc::resizedStyle(st, 2, 3, 1);
+    check(triplet.bass == "R--5-." && triplet.drums[0].steps == "X..x..", "resize to triplets: " + triplet.bass + " "
+                                                                              + triplet.drums[0].steps);
+
     if (failures == 0)
         std::cout << "All tests passed\n";
     return failures == 0 ? 0 : 1;

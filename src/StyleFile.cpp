@@ -2,7 +2,9 @@
 
 #include <QFile>
 #include <QStringList>
+#include <QSaveFile>
 #include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
 namespace {
 
@@ -141,7 +143,115 @@ mc::Style readStyle(QXmlStreamReader &xml)
     return s;
 }
 
+// Groups the steps by beat (by two beats for coarse grids) and separates
+// the bars with '|', the way hand-written files look.
+QString formatPattern(const std::string &steps, const mc::Style &s)
+{
+    int group = s.stepsPerBeat;
+    if (s.stepsPerBeat <= 2 && s.beatsPerBar % 2 == 0)
+        group *= 2;
+    QString text;
+    for (size_t i = 0; i < steps.size(); ++i) {
+        if (i > 0) {
+            if (i % s.stepsPerBar() == 0)
+                text += QLatin1String(" | ");
+            else if (i % group == 0)
+                text += QLatin1Char(' ');
+        }
+        text += QLatin1Char(steps[i]);
+    }
+    return text;
+}
+
+void writeDrumAttr(QXmlStreamWriter &xml, int note)
+{
+    const QString name = drumName(note);
+    if (note == 0)
+        xml.writeAttribute("drum", "none");
+    else if (!name.isEmpty())
+        xml.writeAttribute("drum", name);
+    else
+        xml.writeAttribute("note", QString::number(note));
+}
+
+void writeRows(QXmlStreamWriter &xml, const char *element, const std::vector<mc::DrumRow> &rows, const mc::Style &s)
+{
+    xml.writeStartElement(element);
+    for (const auto &r : rows) {
+        xml.writeStartElement("row");
+        writeDrumAttr(xml, r.note);
+        xml.writeCharacters(formatPattern(r.steps, s));
+        xml.writeEndElement();
+    }
+    xml.writeEndElement();
+}
+
+void writeStyle(QXmlStreamWriter &xml, const mc::Style &s)
+{
+    xml.writeStartElement("style");
+    xml.writeAttribute("name", QString::fromStdString(s.name));
+
+    xml.writeEmptyElement("meter");
+    xml.writeAttribute("beats", QString::number(s.beatsPerBar));
+    xml.writeAttribute("steps-per-beat", QString::number(s.stepsPerBeat));
+    xml.writeAttribute("bars", QString::number(s.bars));
+    xml.writeTextElement("tempo", QString::number(s.tempo));
+    xml.writeEmptyElement("swing");
+    xml.writeAttribute("amount", QString::number(qRound(s.swing * 100)));
+    xml.writeAttribute("unit", QString::number(s.swingUnit));
+    xml.writeEmptyElement("crash");
+    writeDrumAttr(xml, s.crashNote);
+
+    writeRows(xml, "drums", s.drums, s);
+    if (!s.fill.empty())
+        writeRows(xml, "fill", s.fill, s);
+
+    xml.writeStartElement("bass");
+    xml.writeAttribute("program", QString::number(s.bassProgram));
+    xml.writeAttribute("velocity", QString::number(s.bassVelocity));
+    xml.writeCharacters(formatPattern(s.bass, s));
+    xml.writeEndElement();
+
+    xml.writeStartElement("comp");
+    xml.writeAttribute("program", QString::number(s.pianoProgram));
+    xml.writeAttribute("velocity", QString::number(s.compVelocity));
+    if (s.powerChords)
+        xml.writeAttribute("voicing", "power");
+    xml.writeCharacters(formatPattern(s.comp, s));
+    xml.writeEndElement();
+
+    xml.writeEmptyElement("pad");
+    xml.writeAttribute("program", QString::number(s.padProgram));
+    xml.writeAttribute("enabled", s.padDefault ? "true" : "false");
+
+    xml.writeEndElement();
+}
+
 } // namespace
+
+bool writeStyleFile(const QString &path, const std::vector<mc::Style> &styles, QString &error)
+{
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) {
+        error = file.errorString();
+        return false;
+    }
+    QXmlStreamWriter xml(&file);
+    xml.setAutoFormatting(true);
+    xml.setAutoFormattingIndent(4);
+    xml.writeStartDocument();
+    xml.writeStartElement(RootElement);
+    xml.writeAttribute("version", QString::number(FormatVersion));
+    for (const auto &s : styles)
+        writeStyle(xml, mc::normalizedStyle(s));
+    xml.writeEndElement();
+    xml.writeEndDocument();
+    if (xml.hasError() || !file.commit()) {
+        error = file.errorString();
+        return false;
+    }
+    return true;
+}
 
 bool readStyleFile(const QString &path, std::vector<mc::Style> &styles, QString &error)
 {
@@ -193,4 +303,20 @@ QStringList drumNames()
     for (const auto &d : kDrums)
         names << QLatin1String(d.name);
     return names;
+}
+
+QString drumName(int note)
+{
+    for (const auto &d : kDrums)
+        if (d.note == note)
+            return QLatin1String(d.name);
+    return {};
+}
+
+int drumNote(const QString &name)
+{
+    for (const auto &d : kDrums)
+        if (name == QLatin1String(d.name))
+            return d.note;
+    return -1;
 }

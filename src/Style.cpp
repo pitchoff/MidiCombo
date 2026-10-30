@@ -267,4 +267,53 @@ bool validateStyle(const Style &s, std::string &error)
     return true;
 }
 
+namespace {
+
+// `track` patterns (bass, comp) turn a step inside a note that has no
+// counterpart on the old grid into a hold instead of a rest.
+std::string resizePattern(const std::string &old, const Style &from, int beats, int spb, int oldBars, int newBars,
+                          bool track)
+{
+    std::string result;
+    result.reserve(static_cast<size_t>(newBars * beats * spb));
+    for (int bar = 0; bar < newBars; ++bar) {
+        const int srcBar = bar % oldBars;
+        for (int beat = 0; beat < beats; ++beat) {
+            for (int sub = 0; sub < spb; ++sub) {
+                char c = '.';
+                if (beat < from.beatsPerBar) {
+                    const int pos = sub * from.stepsPerBeat; // in units of 1/(spb*oldSpb) beat
+                    const size_t index = static_cast<size_t>(srcBar * from.stepsPerBar() + beat * from.stepsPerBeat
+                                                             + pos / spb);
+                    if (index < old.size()) {
+                        if (pos % spb == 0)
+                            c = old[index];
+                        else if (track && old[index] != '.')
+                            c = '-';
+                    }
+                }
+                result += c;
+            }
+        }
+    }
+    return result;
+}
+
+} // namespace
+
+Style resizedStyle(const Style &style, int beatsPerBar, int stepsPerBeat, int bars)
+{
+    Style s = style;
+    s.beatsPerBar = beatsPerBar;
+    s.stepsPerBeat = stepsPerBeat;
+    s.bars = bars;
+    for (auto &r : s.drums)
+        r.steps = resizePattern(r.steps, style, beatsPerBar, stepsPerBeat, style.bars, bars, false);
+    for (auto &r : s.fill)
+        r.steps = resizePattern(r.steps, style, beatsPerBar, stepsPerBeat, 1, 1, false);
+    s.bass = resizePattern(style.bass, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
+    s.comp = resizePattern(style.comp, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
+    return s;
+}
+
 } // namespace mc

@@ -114,6 +114,38 @@ int main()
     readStyleFile(writeText(dir, QStringLiteral("len.xml"), styleFile("<bass>R-5-</bass>")), lengthErr, error);
     check(error.contains(QStringLiteral("4 steps, expected 8")), "length error names the step counts: " + error.toStdString());
 
+    // Writing and reading back gives the same styles.
+    std::vector<mc::Style> all = mc::builtinStyles();
+    for (const QString &name : QDir(QStringLiteral(EXAMPLES_DIR "/styles")).entryList({"*.xml"})) {
+        std::vector<mc::Style> loaded;
+        if (readStyleFile(QStringLiteral(EXAMPLES_DIR "/styles/") + name, loaded, error))
+            all.insert(all.end(), loaded.begin(), loaded.end());
+    }
+    all.back().crashNote = 0;
+    all.back().drums.push_back({90, std::string(all.back().stepCount(), 'x')}); // a note without a name
+    const QString roundTrip = dir.filePath(QStringLiteral("roundtrip.xml"));
+    check(writeStyleFile(roundTrip, all, error), "write styles: " + error.toStdString());
+    std::vector<mc::Style> back;
+    check(readStyleFile(roundTrip, back, error), "read written styles: " + error.toStdString());
+    check(back.size() == all.size(), "round trip keeps the number of styles");
+    for (size_t i = 0; i < std::min(back.size(), all.size()); ++i) {
+        const mc::Style &a = all[i], &b = back[i];
+        bool same = a.name == b.name && a.beatsPerBar == b.beatsPerBar && a.stepsPerBeat == b.stepsPerBeat
+                    && a.bars == b.bars && a.tempo == b.tempo && qRound(a.swing * 100) == qRound(b.swing * 100)
+                    && a.swingUnit == b.swingUnit && a.crashNote == b.crashNote && a.bass == b.bass && a.comp == b.comp
+                    && a.powerChords == b.powerChords && a.pianoProgram == b.pianoProgram
+                    && a.bassProgram == b.bassProgram && a.padProgram == b.padProgram && a.padDefault == b.padDefault
+                    && a.bassVelocity == b.bassVelocity && a.compVelocity == b.compVelocity
+                    && a.drums.size() == b.drums.size() && a.fill.size() == b.fill.size();
+        for (size_t r = 0; same && r < a.drums.size(); ++r)
+            same = a.drums[r].note == b.drums[r].note && a.drums[r].steps == b.drums[r].steps;
+        for (size_t r = 0; same && r < a.fill.size(); ++r)
+            same = a.fill[r].note == b.fill[r].note && a.fill[r].steps == b.fill[r].steps;
+        check(same, "round trip of style " + a.name);
+    }
+    check(drumName(38) == QLatin1String("snare") && drumNote(QStringLiteral("kick")) == 36 && drumName(90).isEmpty(),
+          "drum name lookup");
+
     if (failures == 0)
         std::cout << "All style tests passed\n";
     return failures == 0 ? 0 : 1;

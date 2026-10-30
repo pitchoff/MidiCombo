@@ -23,6 +23,7 @@ class BeatIndicator;
 class MidiEngine;
 class NoteSpinBox;
 class ProgressionView;
+class StyleEditor;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -63,6 +64,9 @@ private:
     int loadStyleFile(const QString &path, bool interactive, QString *firstName = nullptr);
     void addStyle(const mc::Style &style);
     void forgetLoadedStyles();
+    void showStyleEditor();
+    void updateStyleEditor();
+    void selectStyle(const QString &name);
     const mc::Style &currentStyle() const;
     bool applyProgression();
     ChordMode currentMode() const;
@@ -94,6 +98,7 @@ private:
     std::vector<mc::Style> m_styles; // built-in styles first, then styles loaded from files
     QStringList m_styleFiles;
     QList<PresetData> m_presets; // built-in presets first, then presets loaded from files
+    StyleEditor *m_styleEditor = nullptr;
 
     // Transport
     QAction *m_playAction = nullptr;

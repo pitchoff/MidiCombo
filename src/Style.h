@@ -51,5 +51,8 @@ const std::vector<Style> &builtinStyles();
 // Removes the whitespace and '|' that patterns may contain for readability.
 Style normalizedStyle(Style style);
 bool validateStyle(const Style &style, std::string &error);
+// Changes the meter and length of a style. Steps that fall on the new grid
+// are kept, new beats are rests, and new bars repeat the existing ones.
+Style resizedStyle(const Style &style, int beatsPerBar, int stepsPerBeat, int bars);
 
 } // namespace mc

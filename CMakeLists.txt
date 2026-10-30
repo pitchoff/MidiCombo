@@ -30,6 +30,7 @@ add_executable(midicombo
     src/BandEngine.cpp
     src/MainWindow.cpp
     src/PresetFile.cpp
+    src/StyleEditor.cpp
     src/StyleFile.cpp
     src/Widgets.cpp
 )

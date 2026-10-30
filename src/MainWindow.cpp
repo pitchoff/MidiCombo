@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include "MidiEngine.h"
+#include "StyleEditor.h"
 #include "StyleFile.h"
 #include "Widgets.h"
 
@@ -155,6 +156,8 @@ void MainWindow::buildUi()
     bandMenu->addAction(m_playAction);
     bandMenu->addAction(m_stopAction);
     bandMenu->addAction(tr("MIDI &Panic (all notes off)"), this, [this] { m_midi->allNotesOff(); });
+    QMenu *windowMenu = menuBar()->addMenu(tr("&Window"));
+    windowMenu->addAction(tr("&Style Editor…"), QKeySequence(Qt::CTRL | Qt::Key_E), this, &MainWindow::showStyleEditor);
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
     helpMenu->addAction(tr("&Sound Setup…"), this, [this] {
         QMessageBox::information(this, tr("Sound Setup"),
@@ -506,11 +509,50 @@ void MainWindow::addStyle(const mc::Style &style)
             m_styles[i] = style;
             if (static_cast<int>(i) == m_styleCombo->currentIndex())
                 m_engine->setStyle(style);
+            updateStyleEditor();
             return;
         }
     }
     m_styles.push_back(style);
     m_styleCombo->addItem(QString::fromStdString(style.name));
+    updateStyleEditor();
+}
+
+void MainWindow::selectStyle(const QString &name)
+{
+    const int index = m_styleCombo->findText(name);
+    if (index >= 0)
+        m_styleCombo->setCurrentIndex(index);
+}
+
+void MainWindow::showStyleEditor()
+{
+    if (!m_styleEditor) {
+        m_styleEditor = new StyleEditor(this);
+        connect(m_styleEditor, &StyleEditor::applyRequested, this, [this](const mc::Style &style) {
+            addStyle(style);
+            selectStyle(QString::fromStdString(style.name));
+            statusBar()->showMessage(tr("Style '%1' applied").arg(QString::fromStdString(style.name)), 4000);
+        });
+        connect(m_styleEditor, &StyleEditor::savedToFile, this, [this](const QString &path, const QString &name) {
+            // Loading the file registers it, so it is loaded again on the next start.
+            if (loadStyleFile(path, true) > 0) {
+                selectStyle(name);
+                statusBar()->showMessage(tr("Style '%1' saved to %2").arg(name, path), 6000);
+            }
+        });
+        updateStyleEditor();
+    }
+    m_styleEditor->editStyle(m_styleCombo->currentText()); // keeps unapplied changes
+    m_styleEditor->show();
+    m_styleEditor->raise();
+    m_styleEditor->activateWindow();
+}
+
+void MainWindow::updateStyleEditor()
+{
+    if (m_styleEditor)
+        m_styleEditor->setStyles(m_styles);
 }
 
 // Returns the number of styles loaded, 0 on error.
@@ -582,6 +624,7 @@ void MainWindow::forgetLoadedStyles()
     const int idx = m_styleCombo->findText(current);
     m_styleCombo->setCurrentIndex(std::max(idx, 0));
     onStyleChanged(m_styleCombo->currentIndex());
+    updateStyleEditor();
     statusBar()->showMessage(tr("Removed all loaded styles"), 4000);
 }
 

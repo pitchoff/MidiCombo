@@ -61,6 +61,27 @@ program number counted from 0 (for drums, the drum kit number).
 Pop Rock, Ballad, Swing Jazz, Bossa Nova, Funk, Waltz (3/4), Reggae,
 Shuffle Blues. They are defined as step patterns in `src/Style.cpp`.
 
+### Style editor
+
+**Window ▸ Style Editor…** (Ctrl+E) opens a separate window to change a
+style or create a new one:
+
+- **Drums** are a grid with one row per instrument. Click a step to set or
+  clear it, shift-click for an accent, right-click to cycle the velocity
+  (accent, normal, soft, ghost), drag to paint. Click an instrument name to
+  change, move or remove it; "+ add drum…" adds a row. The fill has its own
+  grid on the **Fill** tab.
+- **Bass** and **comp** are tracks. Click a step and type a token (bass
+  `R 3 5 6 7 8 A`, comp `C c 1`–`9`), `-` to hold, `.` or Del for a rest.
+  Drag a note to change its length, double-click to add or remove a note,
+  right-click for the list of tokens.
+- Changing the meter keeps the steps that fit the new grid; extra bars
+  repeat the existing ones.
+- **Apply** (Ctrl+Return) puts the style into the style list so the band
+  plays it at once. Apply it under a new name to make a copy. **Save to
+  File…** also writes it to a style file (other styles in that file are
+  kept), which is loaded again on the next start.
+
 ### Style files
 
 More styles can be loaded from XML with **File ▸ Load Styles…** (Ctrl+L).

@@ -32,4 +32,8 @@
 // Drum rows take either a GM note number (note="38") or a drum name
 // (drum="snare"); drumNames() lists the names.
 bool readStyleFile(const QString &path, std::vector<mc::Style> &styles, QString &error);
+bool writeStyleFile(const QString &path, const std::vector<mc::Style> &styles, QString &error);
 QStringList drumNames();
+// The name of a GM drum note ("snare"), or an empty string.
+QString drumName(int note);
+int drumNote(const QString &name); // -1 if unknown
