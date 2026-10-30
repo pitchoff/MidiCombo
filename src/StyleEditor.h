@@ -16,6 +16,7 @@ class QLineEdit;
 class QPainter;
 class QPushButton;
 class QSpinBox;
+class QTimer;
 
 // Common geometry of the drum grid and the tracks, so that their steps line
 // up when they are stacked in the editor.
@@ -135,10 +136,21 @@ public:
     void editStyle(const QString &name);
     bool isModified() const { return m_modified; }
     mc::Style style() const;
+    bool isTesting() const;
+    // Switches the Test button off without emitting testStopped(), for when
+    // the band was stopped elsewhere.
+    void setTesting(bool testing);
 
 signals:
     void applyRequested(const mc::Style &style);
     void savedToFile(const QString &path, const QString &styleName);
+    // While testing, the band plays the edited style; testStyle() is
+    // emitted again after every change.
+    void testStyle(const mc::Style &style);
+    void testStopped();
+
+protected:
+    void hideEvent(QHideEvent *event) override;
 
 private:
     void load(const mc::Style &style);
@@ -181,4 +193,6 @@ private:
     QCheckBox *m_fillEnabled = nullptr;
     StepTrack *m_bass = nullptr;
     StepTrack *m_comp = nullptr;
+    QPushButton *m_testButton = nullptr;
+    QTimer *m_testTimer = nullptr; // collects quick edits into one update
 };

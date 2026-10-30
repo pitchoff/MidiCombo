@@ -67,6 +67,9 @@ private:
     void showStyleEditor();
     void updateStyleEditor();
     void selectStyle(const QString &name);
+    void testStyle(const mc::Style &style);
+    void endStyleTest();
+    void sendStyle(); // the current style, or the tested one, with its tempo and swing
     const mc::Style &currentStyle() const;
     bool applyProgression();
     ChordMode currentMode() const;
@@ -99,6 +102,9 @@ private:
     QStringList m_styleFiles;
     QList<PresetData> m_presets; // built-in presets first, then presets loaded from files
     StyleEditor *m_styleEditor = nullptr;
+    mc::Style m_testStyle;         // style played while testing from the style editor
+    bool m_testing = false;
+    bool m_testStartedBand = false; // stop the band when the test ends
 
     // Transport
     QAction *m_playAction = nullptr;

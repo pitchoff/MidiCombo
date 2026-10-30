@@ -27,7 +27,9 @@
 #include <QSettings>
 #include <QSignalBlocker>
 #include <QSpinBox>
+#include <QStyle>
 #include <QTabWidget>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -795,6 +797,27 @@ StyleEditor::StyleEditor(QWidget *parent)
     layout->addWidget(help);
 
     auto *buttons = new QDialogButtonBox;
+    m_testButton = buttons->addButton(tr("Test"), QDialogButtonBox::ActionRole);
+    m_testButton->setCheckable(true);
+    m_testButton->setIcon(QWidget::style()->standardIcon(QStyle::SP_MediaPlay));
+    m_testButton->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_T));
+    m_testButton->setToolTip(tr("Play the edited style with the band, with its tempo, swing and instruments, "
+                                "without changing the style list. Changes are heard at the next bar. (Ctrl+T)"));
+    m_testTimer = new QTimer(this);
+    m_testTimer->setSingleShot(true);
+    m_testTimer->setInterval(150);
+    connect(m_testTimer, &QTimer::timeout, this, [this] {
+        if (isTesting())
+            emit testStyle(style());
+    });
+    connect(m_testButton, &QPushButton::toggled, this, [this](bool on) {
+        m_testButton->setIcon(QWidget::style()->standardIcon(on ? QStyle::SP_MediaStop : QStyle::SP_MediaPlay));
+        m_testTimer->stop();
+        if (on)
+            emit testStyle(style());
+        else
+            emit testStopped();
+    });
     QPushButton *applyButton = buttons->addButton(tr("Apply"), QDialogButtonBox::ApplyRole);
     applyButton->setToolTip(tr("Use the style in the band (Ctrl+Return)"));
     applyButton->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Return));
@@ -971,6 +994,27 @@ void StyleEditor::setModified(bool modified)
 {
     m_modified = modified;
     updateTitle();
+    if (isTesting())
+        m_testTimer->start();
+}
+
+bool StyleEditor::isTesting() const
+{
+    return m_testButton->isChecked();
+}
+
+void StyleEditor::setTesting(bool testing)
+{
+    QSignalBlocker block(m_testButton);
+    m_testButton->setChecked(testing);
+    m_testButton->setIcon(QWidget::style()->standardIcon(testing ? QStyle::SP_MediaStop : QStyle::SP_MediaPlay));
+    m_testTimer->stop();
+}
+
+void StyleEditor::hideEvent(QHideEvent *event)
+{
+    m_testButton->setChecked(false); // closing the editor ends the test
+    QDialog::hideEvent(event);
 }
 
 void StyleEditor::updateTitle()

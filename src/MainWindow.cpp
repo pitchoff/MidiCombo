@@ -84,12 +84,16 @@ MainWindow::MainWindow(MidiEngine *midi, QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    if (m_styleEditor)
+        m_styleEditor->disconnect(this);
     m_engine->stop();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     stopBand();
+    if (m_styleEditor)
+        m_styleEditor->close();
     saveSettings();
     event->accept();
 }
@@ -124,7 +128,10 @@ void MainWindow::buildUi()
     m_tempo->setSuffix(tr(" BPM"));
     m_tempo->setValue(120);
     tb->addWidget(m_tempo);
-    connect(m_tempo, &QSpinBox::valueChanged, this, [this](int v) { m_engine->setTempo(v); });
+    connect(m_tempo, &QSpinBox::valueChanged, this, [this](int v) {
+        if (!m_testing)
+            m_engine->setTempo(v);
+    });
 
     tb->addWidget(new QLabel(tr("  Swing ")));
     m_swing = new QSlider(Qt::Horizontal);
@@ -136,7 +143,8 @@ void MainWindow::buildUi()
     tb->addWidget(m_swingLabel);
     connect(m_swing, &QSlider::valueChanged, this, [this](int v) {
         m_swingLabel->setText(QStringLiteral("%1%").arg(v));
-        m_engine->setSwing(v / 100.0);
+        if (!m_testing)
+            m_engine->setSwing(v / 100.0);
     });
 
     m_countIn = new QCheckBox(tr("Count-in"));
@@ -427,9 +435,7 @@ void MainWindow::startBand(bool countIn)
     if (m_outputId.isEmpty())
         statusBar()->showMessage(tr("No MIDI output connected – see Help ▸ Sound Setup"), 6000);
 
-    m_engine->setStyle(currentStyle());
-    m_engine->setTempo(m_tempo->value());
-    m_engine->setSwing(m_swing->value() / 100.0);
+    sendStyle();
     m_engine->setMode(currentMode());
     sendMixer();
     m_engine->start(countIn);
@@ -438,6 +444,11 @@ void MainWindow::startBand(bool countIn)
 
 void MainWindow::stopBand()
 {
+    if (m_testing) {
+        endStyleTest();
+        if (m_styleEditor)
+            m_styleEditor->setTesting(false);
+    }
     m_engine->stop();
     m_beatIndicator->clear();
     m_positionLabel->setText(tr("Stopped"));
@@ -481,7 +492,7 @@ void MainWindow::onStyleChanged(int index)
 {
     if (index < 0)
         return;
-    m_engine->setStyle(m_styles[index]);
+    sendStyle();
     if (m_presetCombo->currentIndex() <= 0)
         applyStyleDefaults(m_styles[index]);
 }
@@ -508,7 +519,7 @@ void MainWindow::addStyle(const mc::Style &style)
         if (m_styles[i].name == style.name) {
             m_styles[i] = style;
             if (static_cast<int>(i) == m_styleCombo->currentIndex())
-                m_engine->setStyle(style);
+                sendStyle();
             updateStyleEditor();
             return;
         }
@@ -534,6 +545,13 @@ void MainWindow::showStyleEditor()
             selectStyle(QString::fromStdString(style.name));
             statusBar()->showMessage(tr("Style '%1' applied").arg(QString::fromStdString(style.name)), 4000);
         });
+        connect(m_styleEditor, &StyleEditor::testStyle, this, &MainWindow::testStyle);
+        connect(m_styleEditor, &StyleEditor::testStopped, this, [this] {
+            const bool stop = m_testStartedBand;
+            endStyleTest();
+            if (stop)
+                stopBand();
+        });
         connect(m_styleEditor, &StyleEditor::savedToFile, this, [this](const QString &path, const QString &name) {
             // Loading the file registers it, so it is loaded again on the next start.
             if (loadStyleFile(path, true) > 0) {
@@ -547,6 +565,53 @@ void MainWindow::showStyleEditor()
     m_styleEditor->show();
     m_styleEditor->raise();
     m_styleEditor->activateWindow();
+}
+
+// The band plays the style from the style editor, with its tempo, swing and
+// instruments, until endStyleTest(). The main window's settings are kept.
+void MainWindow::testStyle(const mc::Style &style)
+{
+    const bool starting = !m_testing;
+    m_testing = true;
+    m_testStyle = style;
+    sendStyle();
+    sendMixer();
+    if (starting) {
+        statusBar()->showMessage(tr("Testing the style from the style editor"), 4000);
+        m_testStartedBand = !m_engine->isRunning();
+        if (m_testStartedBand)
+            startBand(false);
+        if (!m_engine->isRunning()) { // e.g. the chord progression has errors
+            m_testing = false;
+            m_testStartedBand = false;
+            m_styleEditor->setTesting(false);
+            sendStyle();
+            sendMixer();
+        }
+    }
+}
+
+void MainWindow::endStyleTest()
+{
+    if (!m_testing)
+        return;
+    m_testing = false;
+    m_testStartedBand = false;
+    sendStyle();
+    sendMixer();
+}
+
+void MainWindow::sendStyle()
+{
+    if (m_testing) {
+        m_engine->setStyle(m_testStyle);
+        m_engine->setTempo(m_testStyle.tempo);
+        m_engine->setSwing(m_testStyle.swing);
+    } else {
+        m_engine->setStyle(currentStyle());
+        m_engine->setTempo(m_tempo->value());
+        m_engine->setSwing(m_swing->value() / 100.0);
+    }
 }
 
 void MainWindow::updateStyleEditor()
@@ -646,7 +711,7 @@ void MainWindow::applyPreset(const PresetData &preset)
     } else if (!preset.style.isEmpty()) {
         statusBar()->showMessage(tr("Unknown style '%1' – keeping the current style").arg(preset.style), 5000);
     }
-    m_engine->setStyle(currentStyle());
+    sendStyle();
     applyStyleDefaults(currentStyle());
     if (preset.tempo > 0)
         m_tempo->setValue(preset.tempo);
@@ -849,7 +914,14 @@ void MainWindow::sendPart(BandEngine::Part part)
 {
     const int ch = BandEngine::channel(part);
     const PartControls &pc = m_parts[part];
-    m_midi->programChange(ch, pc.program->currentData().toInt());
+    int program = pc.program->currentData().toInt();
+    if (m_testing && part == BandEngine::Piano)
+        program = m_testStyle.pianoProgram;
+    else if (m_testing && part == BandEngine::Bass)
+        program = m_testStyle.bassProgram;
+    else if (m_testing && part == BandEngine::Pad)
+        program = m_testStyle.padProgram;
+    m_midi->programChange(ch, program);
     m_midi->controlChange(ch, 7, pc.volume->value());
     m_midi->controlChange(ch, 91, 40); // a little reverb
 }
@@ -933,7 +1005,7 @@ void MainWindow::loadSettings()
         loadStyleFile(path, false);
 
     m_styleCombo->setCurrentIndex(std::max(0, m_styleCombo->findText(s.value("styleName").toString())));
-    m_engine->setStyle(currentStyle());
+    sendStyle();
     applyStyleDefaults(currentStyle()); // the saved settings below override them
 
     m_tempo->setValue(s.value("tempo", currentStyle().tempo).toInt());

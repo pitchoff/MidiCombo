@@ -77,6 +77,12 @@ style or create a new one:
   right-click for the list of tokens.
 - Changing the meter keeps the steps that fit the new grid; extra bars
   repeat the existing ones.
+- **Test** (Ctrl+T) plays the edited style with the band right away, with
+  its tempo, swing and instruments, without changing the style list or the
+  main window's settings. Edits are heard from the next bar. Pressing Test
+  again (or closing the editor) goes back to the selected style; if Test
+  started the band, it stops it too. The chords come from the current
+  mode, so it works with the progression or a live keyboard.
 - **Apply** (Ctrl+Return) puts the style into the style list so the band
   plays it at once. Apply it under a new name to make a copy. **Save to
   File…** also writes it to a style file (other styles in that file are
