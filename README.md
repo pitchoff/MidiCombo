@@ -151,6 +151,12 @@ ctest --test-dir build      # chord parser/detector tests
 ./build/midicombo
 ```
 
+`cmake --install build` (default prefix `/usr/local`) installs the program,
+the example styles, a desktop entry and the application icon, so MidiCombo
+appears in the application menu. The icon source is `icons/midicombo.svg`;
+the PNG sizes are rendered from it with
+`inkscape midicombo.svg -w N -h N -o midicombo-N.png`.
+
 ## Sound
 
 MidiCombo produces MIDI, not audio. Start a General MIDI synth, e.g.:

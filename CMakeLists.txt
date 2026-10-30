@@ -4,6 +4,7 @@ project(MidiCombo VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -33,6 +34,7 @@ add_executable(midicombo
     src/StyleEditor.cpp
     src/StyleFile.cpp
     src/Widgets.cpp
+    icons/icons.qrc
 )
 target_compile_options(midicombo PRIVATE -Wall -Wextra)
 target_link_libraries(midicombo PRIVATE midicombo_core Qt6::Widgets PkgConfig::ALSA Threads::Threads)
@@ -54,3 +56,9 @@ add_test(NAME styles COMMAND test_styles)
 
 install(TARGETS midicombo RUNTIME DESTINATION bin)
 install(DIRECTORY examples/styles/ DESTINATION share/midicombo/styles)
+install(FILES icons/midicombo.desktop DESTINATION share/applications)
+install(FILES icons/midicombo.svg DESTINATION share/icons/hicolor/scalable/apps)
+foreach(size 16 24 32 48 64 128 256)
+    install(FILES icons/midicombo-${size}.png DESTINATION share/icons/hicolor/${size}x${size}/apps
+            RENAME midicombo.png)
+endforeach()

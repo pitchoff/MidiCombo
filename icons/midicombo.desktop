@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=MidiCombo
+GenericName=Background Band
+Comment=Drums, bass, piano and pad that follow your chords via ALSA MIDI
+Exec=midicombo
+Icon=midicombo
+Terminal=false
+Categories=AudioVideo;Audio;Music;Midi;Qt;
+Keywords=band;accompaniment;chords;midi;drums;

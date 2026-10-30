@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>midicombo-16.png</file>
+        <file>midicombo-24.png</file>
+        <file>midicombo-32.png</file>
+        <file>midicombo-48.png</file>
+        <file>midicombo-64.png</file>
+        <file>midicombo-128.png</file>
+        <file>midicombo-256.png</file>
+    </qresource>
+</RCC>
