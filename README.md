@@ -60,33 +60,74 @@ program number counted from 0 (for drums, the drum kit number).
 
 Pop Rock, Ballad, Swing Jazz, Bossa Nova, Funk, Waltz (3/4), Reggae,
 Shuffle Blues. They are defined as step patterns in `src/Style.cpp`.
+More styles come from style files or the style editor.
 
 ### Style editor
 
 **Window ▸ Style Editor…** (Ctrl+E) opens a separate window to change a
-style or create a new one:
+style or create a new one, and to hear the result while you edit. The
+main window stays usable, so the band can keep playing.
+
+The window, from top to bottom:
+
+- **Edit** chooses the style to load: any built-in or loaded style.
+  **New** starts from a simple rock beat, and **Revert** discards the
+  changes since the last load or apply. Unapplied changes are shown with
+  `*` in the title, and you're asked before they are discarded.
+- **Style**: name, tempo, beats per bar, steps per beat (quarters, eighths,
+  triplets, sixteenths, sextuplets or 12), number of bars, swing, and the
+  crash cymbal on phrase starts.
+- **Instruments**: program and velocity for comp and bass, close or power
+  chords for the comp, and the pad program and whether the pad is on by
+  default.
+- **Groove** tab: the drum grid with the bass and comp tracks below it,
+  step by step in line. Bars are marked by heavy lines and bold numbers.
+- **Fill** tab: a one-bar drum grid played on the last bar of each phrase.
+  Switching it on starts it from the first bar of the groove.
+
+Editing the patterns:
 
 - **Drums** are a grid with one row per instrument. Click a step to set or
   clear it, shift-click for an accent, right-click to cycle the velocity
-  (accent, normal, soft, ghost), drag to paint. Click an instrument name to
-  change, move or remove it; "+ add drum…" adds a row. The fill has its own
-  grid on the **Fill** tab.
-- **Bass** and **comp** are tracks. Click a step and type a token (bass
-  `R 3 5 6 7 8 A`, comp `C c 1`–`9`), `-` to hold, `.` or Del for a rest.
-  Drag a note to change its length, double-click to add or remove a note,
-  right-click for the list of tokens.
-- Changing the meter keeps the steps that fit the new grid; extra bars
-  repeat the existing ones.
+  (normal, accent, soft, ghost), drag to paint. With the keyboard, the
+  arrow keys move, `x` `X` `o` `g` set a step, Space toggles and `.` or Del
+  clears. Click an instrument name to change, move, clear or remove it;
+  "+ add drum…" adds a row (kit pieces, a percussion submenu, or any GM
+  note).
+- **Bass** and **comp** are tracks: each note is a bar that lasts until
+  the next note or rest. Click a step and type a token (bass
+  `R 3 5 6 7 8 A`, comp `C c 1`–`9`), `-` to hold, `.` or Del for a rest;
+  the cursor moves on as you type. Drag a note to change its length,
+  double-click to add or remove a note, right-click for the list of tokens.
+- Changing the meter keeps the steps that fit the new grid, notes keep
+  their length, and extra bars repeat the existing ones. Going to a coarser
+  grid drops the steps in between; **Revert** brings them back.
+
+Trying and keeping a style:
+
 - **Test** (Ctrl+T) plays the edited style with the band right away, with
   its tempo, swing and instruments, without changing the style list or the
   main window's settings. Edits are heard from the next bar. Pressing Test
-  again (or closing the editor) goes back to the selected style; if Test
-  started the band, it stops it too. The chords come from the current
-  mode, so it works with the progression or a live keyboard.
-- **Apply** (Ctrl+Return) puts the style into the style list so the band
-  plays it at once. Apply it under a new name to make a copy. **Save to
-  File…** also writes it to a style file (other styles in that file are
-  kept), which is loaded again on the next start.
+  again, Stop in the main window, or closing the editor goes back to the
+  selected style; if Test started the band, it stops it too. The chords
+  come from the current mode, so it works with the progression or a live
+  keyboard.
+- **Apply** (Ctrl+Return) puts the style into the style list and selects
+  it, so the band plays it at once. Apply it under a new name to make a
+  copy; using the name of another style replaces that style after asking.
+- **Save to File…** applies the style and writes it to a style file,
+  which is loaded again on the next start. Saving into an existing style
+  file keeps the other styles in it, but the file is rewritten, so XML
+  comments are lost.
+- Applied but unsaved styles, including changed built-in styles, last
+  until you quit.
+
+A typical session: pick a style that is close to what you want under
+**Edit**, give it a new name, press **Test**, change the grid and tracks
+until it sounds right, then **Save to File…**.
+
+How the editor maps to the XML, and what exactly it writes, is described
+in [syntax.md](syntax.md#the-style-editor).
 
 ### Style files
 
@@ -180,3 +221,6 @@ MIDI channels: 1 piano/comp, 2 bass, 3 pad, 4 MIDI thru, 10 drums.
 | `BandEngine` | real-time sequencer thread (12 ticks per beat, swing, voice leading) |
 | `MidiEngine` | ALSA sequencer client, ports and connections |
 | `MainWindow`, `Widgets` | Qt user interface |
+| `StyleEditor` | style editor window: drum grid, step tracks, test and apply |
+| `StyleFile`, `PresetFile` | reading and writing the XML style and preset files |
+| `icons/` | application icon (SVG source, rendered PNGs) and desktop entry |
