@@ -1,11 +1,12 @@
 # MidiCombo File Syntax
 
-This document describes the formats MidiCombo reads:
+This document describes the formats MidiCombo reads and writes:
 
 1. [Chord symbols](#1-chord-symbols)
 2. [Chord progressions](#2-chord-progressions): the text in the progression editor and in presets
 3. [Preset files](#3-preset-files): `<midicombo-presets>`
-4. [Style files](#4-style-files): `<midicombo-styles>`
+4. [Style files](#4-style-files): `<midicombo-styles>`, including the
+   [style editor](#the-style-editor) and how it writes them
 5. [Reference tables](#5-reference-tables)
 
 Both XML formats are UTF-8, currently version `1`. Files with a higher
@@ -165,7 +166,9 @@ A style defines what the band plays: a drum pattern, an optional fill, a
 bass line and a comp (piano/guitar) pattern on a grid of steps. **File ▸
 Load Styles…** adds the styles to the style list. A style with the same
 name as an existing one replaces it, which can be used to override a
-built-in style. Loaded files are reloaded on the next start.
+built-in style. Loaded files are reloaded on the next start. Styles can
+also be created and changed in the [style editor](#the-style-editor)
+instead of writing the XML by hand.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -296,6 +299,85 @@ first bar only after a count-in).
 ### Characters outside these tables
 
 Any other character in a pattern is treated as a rest.
+
+### The style editor
+
+**Window ▸ Style Editor…** (Ctrl+E) edits the same data as a `<style>`
+element. Every control maps to one part of the syntax:
+
+| Editor | XML |
+|---|---|
+| Name | `<style name>` |
+| Tempo | `<tempo>` |
+| Beats per bar, Steps per beat, Bars | `<meter beats steps-per-beat bars>` |
+| Swing, 8ths/16ths | `<swing amount unit>` |
+| Crash | `<crash drum>` (`none` or a crash, ride, splash or china cymbal) |
+| Comp program, velocity, Close/Power chords | `<comp program velocity voicing>` |
+| Bass program, velocity | `<bass program velocity>` |
+| Pad program, On by default | `<pad program enabled>` |
+| Groove tab, drum grid | `<drums>`, one `<row>` per grid row |
+| Groove tab, Bass and Comp tracks | the text of `<bass>` and `<comp>` |
+| Fill tab | `<fill>`; switched off = no `<fill>` element |
+
+The program lists show the GM names numbered from 1, as in most synth
+manuals. The file stores the program counted from 0, so "34 Electric Bass
+(finger)" is written as `program="33"`.
+
+**Drum grid.** Each cell is one step of a `<row>`:
+
+| Action | Character |
+|---|---|
+| Click on an empty step | `x` |
+| Click on a set step | `.` |
+| Shift-click | `X` |
+| Right-click | cycles `x` → `X` → `o` → `g` → `x` (an empty step becomes `X`) |
+| Keys `x` `X` `o` `g`, Space, `.`/Del | that character, toggle `x`/`.`, `.` |
+
+Click a row name to change its instrument (the `drum` or `note`
+attribute), move it, clear it or remove it. "+ add drum…" adds a row of
+rests, and "Other note…" chooses a GM note by number.
+
+**Tracks.** A note is drawn as a bar that starts at its token and runs
+over the following `-` steps. Typing a token writes that character, `-`
+writes a hold, and `.`, Space or Del write a rest. Deleting a note also
+removes its holds. Dragging a note to the right writes `-` up to the
+mouse position. Dragging to the left shortens it and turns the freed
+steps into `.`. A `-` with no note before it is shown as a dotted line,
+because it plays nothing.
+
+**Changing the meter** converts the patterns:
+
+- A step that falls on the new grid keeps its character. Going from 8ths
+  to 16ths turns `R-5.` into `R---5-..`.
+- On a coarser grid, steps between the new steps are dropped: two beats
+  of 16ths `X.x.x...` become `Xx` in quarters.
+- In bass and comp tracks, a new step inside a note becomes `-`, so notes
+  keep their length. 8ths to triplets turns `R-5.` into `R--5-.`.
+- New beats are rests. New bars repeat the existing bars in order, and
+  removed bars or beats are cut off.
+
+The fill is always converted as one bar.
+
+**Test** (Ctrl+T) plays the edited style without adding it to the style
+list. **Apply** adds it to the list or replaces the style of the same
+name. **Save to File…** writes it to a style file.
+
+**What Save to File writes.** The editor writes a normal style file that
+can be edited by hand afterwards. Saving into an existing style file
+replaces the style with the same name, or adds it, and keeps the other
+styles. Files written by the editor always look like this:
+
+- Every element is written, including `<crash>`, `<swing>` and `<pad>`.
+  `<fill>` is left out when the fill is off, and `voicing="power"` is
+  written only for power chords.
+- Drum rows use `drum="…"` when the note has a name in
+  [5.1](#51-drum-names), otherwise `note="…"`. No crash is written as
+  `drum="none"`.
+- Patterns are grouped with spaces by beat, or by two beats for 1 and 2
+  steps per beat in even meters, and bars are separated by ` | `. For
+  example: `R-RR 5-RA | R-.. 5-A-`.
+- The file is rewritten completely. XML comments and the alignment of a
+  hand-written file are not kept.
 
 ---
 
