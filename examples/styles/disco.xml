@@ -21,6 +21,17 @@
         <bass program="38" velocity="100">R.8. R.8. R.8. R.8A</bass>
         <comp program="4" velocity="74">  .... ..C. .... ..C.</comp>
         <pad program="48" enabled="true"/>
+
+        <!-- Thinner drums without tambourine, syncopated bass and keys. -->
+        <variation name="Breakdown">
+            <drums>
+                <row drum="kick">      X... X... X... X...</row>
+                <row drum="clap">      .... X... .... X...</row>
+                <row drum="open-hat">  ..X. ..X. ..X. ..X.</row>
+            </drums>
+            <bass>R..8 .8R. R..8 .5A.</bass>
+            <comp>.C.. ..C. .C.. C.c.</comp>
+        </variation>
     </style>
 
 </midicombo-styles>

@@ -31,6 +31,17 @@
         <bass program="34" velocity="100">R-R- R-R- | R-R- 5-A-</bass>
         <comp program="29" velocity="88" voicing="power">C--- ---- | C--- --C-</comp>
         <pad program="48" enabled="true"/>
+
+        <!-- Full-time drums and a rhythmic guitar under the strings. -->
+        <variation name="Anthem">
+            <drums>
+                <row drum="ride"> X.x. X.x. | X.x. X.x.</row>
+                <row drum="snare">..X. ..X. | ..X. ..X.</row>
+                <row drum="kick"> X... X.x. | X... X.x.</row>
+            </drums>
+            <bass>R-5- 8-5- | R-5- 5-A-</bass>
+            <comp>C--C --C- | C--C --C-</comp>
+        </variation>
     </style>
 
 </midicombo-styles>

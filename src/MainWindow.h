@@ -67,9 +67,13 @@ private:
     void showStyleEditor();
     void updateStyleEditor();
     void selectStyle(const QString &name);
-    void testStyle(const mc::Style &style);
+    void testStyle(const mc::Style &style, int variation);
     void endStyleTest();
     void sendStyle(); // the current style, or the tested one, with its tempo and swing
+    void sendVariation();
+    void updateVariationCombo();
+    QString variationKey() const; // "in-turn", "random", "Main" or a variation name
+    void setVariationKey(const QString &key);
     const mc::Style &currentStyle() const;
     bool applyProgression();
     ChordMode currentMode() const;
@@ -103,6 +107,7 @@ private:
     QList<PresetData> m_presets; // built-in presets first, then presets loaded from files
     StyleEditor *m_styleEditor = nullptr;
     mc::Style m_testStyle;         // style played while testing from the style editor
+    int m_testVariation = 0;
     bool m_testing = false;
     bool m_testStartedBand = false; // stop the band when the test ends
 
@@ -110,6 +115,9 @@ private:
     QAction *m_playAction = nullptr;
     QAction *m_stopAction = nullptr;
     QComboBox *m_styleCombo = nullptr;
+    QComboBox *m_variationCombo = nullptr;
+    QSpinBox *m_variationEvery = nullptr;
+    QLabel *m_variationLabel = nullptr;
     QSpinBox *m_tempo = nullptr;
     QSlider *m_swing = nullptr;
     QLabel *m_swingLabel = nullptr;

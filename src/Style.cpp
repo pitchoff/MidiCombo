@@ -47,6 +47,13 @@ std::vector<Style> makeStyles()
         s.pianoProgram = 0;
         s.bassProgram = 33;
         s.padProgram = 48;
+        s.variations = {{"B",
+            {
+                {Ride,  "XxXx XxXx"},
+                {Snare, "..X. ..X."},
+                {Kick,  "X..x X.x."},
+            },
+            {}, "R-R5 8-5A", "C-c- C-c-"}};
         styles.push_back(s);
     }
     {
@@ -74,6 +81,13 @@ std::vector<Style> makeStyles()
         s.padProgram = 89;
         s.padDefault = true;
         s.compVelocity = 70;
+        s.variations = {{"B",
+            {
+                {ClosedHat, "x.o. x.o. x.o. x.o."},
+                {SideStick, ".... x... .... x..."},
+                {Kick,      "X... ..x. X... ...."},
+            },
+            {}, "R--- ---5 8--- --A-", "1-3- 5-3- 2-4- 5-4-"}};
         styles.push_back(s);
     }
     {
@@ -100,6 +114,7 @@ std::vector<Style> makeStyles()
         s.padProgram = 49;
         s.bassVelocity = 100;
         s.compVelocity = 72;
+        s.variations = {{"B", {}, {}, "R-5- 3-A- | R-7- 5-A-", "..C- .c.. | C-.. .c-."}};
         styles.push_back(s);
     }
     {
@@ -119,6 +134,13 @@ std::vector<Style> makeStyles()
         s.bassProgram = 32;
         s.padProgram = 48;
         s.compVelocity = 74;
+        s.variations = {{"B",
+            {
+                {SideStick, "x..x ..x. | .x.. x..."},
+                {ClosedHat, "xoxo xoxo | xoxo xoxo"},
+                {Kick,      "o..o o..o | o..o o..o"},
+            },
+            {}, "", ".C-. C-.C | -.C- .C.."}};
         styles.push_back(s);
     }
     {
@@ -145,6 +167,14 @@ std::vector<Style> makeStyles()
         s.bassProgram = 33;
         s.padProgram = 50;
         s.bassVelocity = 104;
+        s.variations = {{"B",
+            {
+                {ClosedHat, "Xxox Xxox Xxox Xx.x"},
+                {OpenHat,   ".... .... .... ..x."},
+                {Snare,     ".... X..g .g.. X..g"},
+                {Kick,      "X..x ..x. ..X. .x.."},
+            },
+            {}, "R.8. .R.5 ..R. 7-A.", ".C.. ..C. c..C ..c."}};
         styles.push_back(s);
     }
     {
@@ -169,6 +199,7 @@ std::vector<Style> makeStyles()
         s.pianoProgram = 0;
         s.bassProgram = 32;
         s.padProgram = 48;
+        s.variations = {{"B", {}, {}, "R--- 5- | 3--- 5-", "C-.. C- | ..C- C-"}};
         styles.push_back(s);
     }
     {
@@ -193,6 +224,7 @@ std::vector<Style> makeStyles()
         s.bassProgram = 33;
         s.padProgram = 16;   // drawbar organ
         s.compVelocity = 82;
+        s.variations = {{"B", {}, {}, "R--. 5-3-", ".c.c .ccc"}};
         styles.push_back(s);
     }
     {
@@ -215,6 +247,7 @@ std::vector<Style> makeStyles()
         s.pianoProgram = 0;
         s.bassProgram = 33;
         s.padProgram = 16;
+        s.variations = {{"B", {}, {}, "R-8 7-6 5-6 7-A", "c.C ..c ..C ..c"}};
         styles.push_back(s);
     }
 
@@ -233,7 +266,62 @@ Style normalizedStyle(Style s)
         r.steps = strip(r.steps);
     s.bass = strip(s.bass);
     s.comp = strip(s.comp);
+    for (auto &v : s.variations) {
+        for (auto &r : v.drums)
+            r.steps = strip(r.steps);
+        for (auto &r : v.fill)
+            r.steps = strip(r.steps);
+        v.bass = strip(v.bass);
+        v.comp = strip(v.comp);
+    }
     return s;
+}
+
+const std::vector<DrumRow> &Style::drumsOf(int variation) const
+{
+    if (variation > 0 && variation <= static_cast<int>(variations.size())
+        && !variations[variation - 1].drums.empty())
+        return variations[variation - 1].drums;
+    return drums;
+}
+
+const std::vector<DrumRow> &Style::fillOf(int variation) const
+{
+    if (variation > 0 && variation <= static_cast<int>(variations.size())
+        && !variations[variation - 1].fill.empty())
+        return variations[variation - 1].fill;
+    return fill;
+}
+
+const std::string &Style::bassOf(int variation) const
+{
+    if (variation > 0 && variation <= static_cast<int>(variations.size())
+        && !variations[variation - 1].bass.empty())
+        return variations[variation - 1].bass;
+    return bass;
+}
+
+const std::string &Style::compOf(int variation) const
+{
+    if (variation > 0 && variation <= static_cast<int>(variations.size())
+        && !variations[variation - 1].comp.empty())
+        return variations[variation - 1].comp;
+    return comp;
+}
+
+int nextVariation(VariationMode mode, int current, int count, unsigned random)
+{
+    if (count < 2 || mode == VariationMode::Fixed)
+        return current;
+    if (mode == VariationMode::InTurn)
+        return (current + 1) % count;
+    return (current + 1 + static_cast<int>(random % static_cast<unsigned>(count - 1))) % count;
+}
+
+int variationInterval(int everyBars, int styleBars)
+{
+    const int bars = std::max(1, styleBars);
+    return std::max(1, (std::max(1, everyBars) + bars - 1) / bars) * bars;
 }
 
 const std::vector<Style> &builtinStyles()
@@ -264,6 +352,25 @@ bool validateStyle(const Style &s, std::string &error)
         return fail(length("bass pattern", s.bass.size(), steps));
     if (static_cast<int>(s.comp.size()) != steps)
         return fail(length("comp pattern", s.comp.size(), steps));
+    for (size_t i = 0; i < s.variations.size(); ++i) {
+        const StyleVariation &v = s.variations[i];
+        const std::string where = "variation '" + v.name + "': ";
+        if (v.name.empty() || v.name == "Main" || v.name == "in-turn" || v.name == "random")
+            return fail("a variation cannot be named '" + v.name + "'");
+        for (size_t j = 0; j < i; ++j)
+            if (s.variations[j].name == v.name)
+                return fail("two variations are named '" + v.name + "'");
+        for (const auto &r : v.drums)
+            if (static_cast<int>(r.steps.size()) != steps)
+                return fail(where + length("drum row " + std::to_string(r.note), r.steps.size(), steps));
+        for (const auto &r : v.fill)
+            if (static_cast<int>(r.steps.size()) != s.stepsPerBar())
+                return fail(where + length("fill row " + std::to_string(r.note), r.steps.size(), s.stepsPerBar()));
+        if (!v.bass.empty() && static_cast<int>(v.bass.size()) != steps)
+            return fail(where + length("bass pattern", v.bass.size(), steps));
+        if (!v.comp.empty() && static_cast<int>(v.comp.size()) != steps)
+            return fail(where + length("comp pattern", v.comp.size(), steps));
+    }
     return true;
 }
 
@@ -313,6 +420,16 @@ Style resizedStyle(const Style &style, int beatsPerBar, int stepsPerBeat, int ba
         r.steps = resizePattern(r.steps, style, beatsPerBar, stepsPerBeat, 1, 1, false);
     s.bass = resizePattern(style.bass, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
     s.comp = resizePattern(style.comp, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
+    for (auto &v : s.variations) {
+        for (auto &r : v.drums)
+            r.steps = resizePattern(r.steps, style, beatsPerBar, stepsPerBeat, style.bars, bars, false);
+        for (auto &r : v.fill)
+            r.steps = resizePattern(r.steps, style, beatsPerBar, stepsPerBeat, 1, 1, false);
+        if (!v.bass.empty()) // an empty part stays "same as main"
+            v.bass = resizePattern(v.bass, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
+        if (!v.comp.empty())
+            v.comp = resizePattern(v.comp, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
+    }
     return s;
 }
 

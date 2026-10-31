@@ -28,6 +28,12 @@
         <bass program="33" velocity="94">R-3 5-6 8-6 5-3</bass>
         <comp program="0" velocity="66"> ccc Ccc ccc Ccc</comp>
         <pad program="16" enabled="true"/>
+
+        <!-- Walks through the seventh, piano stabs instead of triplets. -->
+        <variation name="Walking">
+            <bass>R-3 5-7 8-7 5-A</bass>
+            <comp>Cc. ..c Cc. ..c</comp>
+        </variation>
     </style>
 
     <!-- Gentle 6/8 with an arpeggiated acoustic guitar and no fills. -->
@@ -43,6 +49,12 @@
         <bass program="32" velocity="90">R-- 5--</bass>
         <comp program="25" velocity="72">123 432</comp>
         <pad program="48" enabled="false"/>
+
+        <!-- A wider guitar pattern, bass rises to the octave. -->
+        <variation name="Picking">
+            <bass>R-5 8-5</bass>
+            <comp>135 431</comp>
+        </variation>
     </style>
 
 </midicombo-styles>

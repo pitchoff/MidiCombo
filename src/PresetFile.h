@@ -20,6 +20,8 @@ struct PresetData {
     int tempo = -1;
     int swing = -1;     // percent
     int transpose = 0;
+    QString variation;       // "in-turn", "random", "Main" or a variation name; empty = keep
+    int variationEvery = -1; // bars
     QString progression;
     Part parts[PartCount];
 };
@@ -32,6 +34,7 @@ struct PresetData {
 //     <tempo>100</tempo>
 //     <swing>0</swing>
 //     <transpose>2</transpose>
+//     <variation select="in-turn" every="8"/>
 //     <progression>| F7 | Bb7 | F7 | F7 |</progression>
 //     <band>
 //       <part name="bass" enabled="true" program="33" volume="100"/>

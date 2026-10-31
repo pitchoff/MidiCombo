@@ -12,6 +12,16 @@ struct DrumRow {
     std::string steps;
 };
 
+// An alternative arrangement of a style, on the same grid. A part that is
+// empty is taken from the main pattern.
+struct StyleVariation {
+    std::string name;
+    std::vector<DrumRow> drums;
+    std::vector<DrumRow> fill;
+    std::string bass;
+    std::string comp;
+};
+
 // A band style. All patterns use the same step grid (stepsPerBeat) and
 // span `bars` bars, except `fill`, which is exactly one bar long.
 //
@@ -43,9 +53,27 @@ struct Style {
     int bassVelocity = 96;
     int compVelocity = 78;
 
+    std::vector<StyleVariation> variations;
+
     int stepsPerBar() const { return beatsPerBar * stepsPerBeat; }
     int stepCount() const { return stepsPerBar() * bars; }
+
+    // Variation index 0 is the main pattern, 1 is variations[0] and so on.
+    int variationCount() const { return static_cast<int>(variations.size()) + 1; }
+    const std::vector<DrumRow> &drumsOf(int variation) const;
+    const std::vector<DrumRow> &fillOf(int variation) const;
+    const std::string &bassOf(int variation) const;
+    const std::string &compOf(int variation) const;
 };
+
+// How the band chooses a variation.
+enum class VariationMode { Fixed, InTurn, Random };
+
+// The variation after `current`. `random` is any random number; Random mode
+// never repeats the current variation.
+int nextVariation(VariationMode mode, int current, int count, unsigned random);
+// Bars between variation changes: `everyBars` rounded up to whole patterns.
+int variationInterval(int everyBars, int styleBars);
 
 const std::vector<Style> &builtinStyles();
 // Removes the whitespace and '|' that patterns may contain for readability.

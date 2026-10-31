@@ -29,6 +29,12 @@
         <bass program="33" velocity="100">R-.. 5-.. | R-.. 5-A-</bass>
         <comp program="25" velocity="80"> ..C. ..C. | ..C. ..C.</comp>
         <pad program="22" enabled="false"/>
+
+        <!-- Walking bass between the chords, guitar push before 4. -->
+        <variation name="Walking">
+            <bass>R-3- 5-6- | 8-6- 5-A-</bass>
+            <comp>..C. .cC. | ..C. .cC.</comp>
+        </variation>
     </style>
 
     <!-- Train beat: 16th notes on the snare with accents on 2 and 4. -->
@@ -48,6 +54,16 @@
         <bass program="32" velocity="96">R--- .... 5--- ....</bass>
         <comp program="25" velocity="76">.... C-.. .... C-..</comp>
         <pad program="22" enabled="false"/>
+
+        <!-- Looser: kick pickups, bass and guitar answering each other. -->
+        <variation name="Open">
+            <drums>
+                <row drum="snare">ooxo Xoxo ooxo Xoxo</row>
+                <row drum="kick"> X... ..x. X... ..x.</row>
+            </drums>
+            <bass>R-.. 5-.. R-.. 5-A-</bass>
+            <comp>.... C-.c .... C-.c</comp>
+        </variation>
     </style>
 
 </midicombo-styles>

@@ -66,7 +66,13 @@ PresetData readPreset(QXmlStreamReader &xml)
             preset.swing = readInt(xml, -1);
         else if (name == QLatin1String("transpose"))
             preset.transpose = readInt(xml, 0);
-        else if (name == QLatin1String("progression"))
+        else if (name == QLatin1String("variation")) {
+            const auto attrs = xml.attributes();
+            preset.variation = attrs.value(QLatin1String("select")).toString();
+            if (attrs.hasAttribute(QLatin1String("every")))
+                preset.variationEvery = attrs.value(QLatin1String("every")).toInt();
+            xml.skipCurrentElement();
+        } else if (name == QLatin1String("progression"))
             preset.progression = xml.readElementText().trimmed();
         else if (name == QLatin1String("band"))
             readBand(xml, preset);
@@ -139,6 +145,12 @@ bool writePresetFile(const QString &path, const QList<PresetData> &presets, QStr
         if (p.swing >= 0)
             xml.writeTextElement(QLatin1String("swing"), QString::number(p.swing));
         xml.writeTextElement(QLatin1String("transpose"), QString::number(p.transpose));
+        if (!p.variation.isEmpty()) {
+            xml.writeEmptyElement(QLatin1String("variation"));
+            xml.writeAttribute(QLatin1String("select"), p.variation);
+            if (p.variationEvery > 0)
+                xml.writeAttribute(QLatin1String("every"), QString::number(p.variationEvery));
+        }
         xml.writeTextElement(QLatin1String("progression"), p.progression);
 
         xml.writeStartElement(QLatin1String("band"));

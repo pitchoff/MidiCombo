@@ -109,6 +109,36 @@ int main()
     check(triplet.bass == "R--5-." && triplet.drums[0].steps == "X..x..", "resize to triplets: " + triplet.bass + " "
                                                                               + triplet.drums[0].steps);
 
+    // Variations: empty parts come from the main pattern.
+    st.variations = {{"B", {}, {}, "R5-.", ""}};
+    check(mc::validateStyle(st, err), "variation valid: " + err);
+    check(st.bassOf(1) == "R5-." && st.compOf(1) == st.comp && st.drumsOf(1)[0].steps == st.drums[0].steps
+              && st.fillOf(1)[0].steps == st.fill[0].steps && st.bassOf(0) == st.bass && st.bassOf(5) == st.bass,
+          "variation parts fall back to main");
+    mc::Style resized = mc::resizedStyle(st, 2, 4, 1);
+    check(resized.variations[0].bass == "R-5---..", "variation bass is resized: " + resized.variations[0].bass);
+    check(resized.variations[0].comp.empty() && resized.variations[0].drums.empty(), "main parts stay inherited");
+    check(mc::validateStyle(resized, err), "resized variation valid: " + err);
+    mc::Style badVariation = st;
+    badVariation.variations[0].bass = "R5";
+    check(!mc::validateStyle(badVariation, err), "variation length is checked");
+    badVariation = st;
+    badVariation.variations = {{"B", {}, {}, "", ""}, {"B", {}, {}, "", ""}};
+    check(!mc::validateStyle(badVariation, err), "variation names are unique");
+    badVariation.variations = {{"Main", {}, {}, "", ""}};
+    check(!mc::validateStyle(badVariation, err), "reserved variation name");
+    using mc::VariationMode;
+    check(mc::nextVariation(VariationMode::InTurn, 0, 3, 0) == 1 && mc::nextVariation(VariationMode::InTurn, 2, 3, 0) == 0,
+          "variations in turn");
+    check(mc::nextVariation(VariationMode::Fixed, 1, 3, 7) == 1 && mc::nextVariation(VariationMode::Random, 0, 1, 7) == 0,
+          "no change without a choice");
+    for (unsigned r = 0; r < 20; ++r) {
+        const int next = mc::nextVariation(VariationMode::Random, 1, 4, r);
+        check(next != 1 && next >= 0 && next < 4, "random variation differs");
+    }
+    check(mc::variationInterval(8, 1) == 8 && mc::variationInterval(3, 2) == 4 && mc::variationInterval(1, 4) == 4,
+          "variation changes on whole patterns");
+
     if (failures == 0)
         std::cout << "All tests passed\n";
     return failures == 0 ? 0 : 1;

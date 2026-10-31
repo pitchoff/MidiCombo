@@ -62,6 +62,25 @@ Pop Rock, Ballad, Swing Jazz, Bossa Nova, Funk, Waltz (3/4), Reggae,
 Shuffle Blues. They are defined as step patterns in `src/Style.cpp`.
 More styles come from style files or the style editor.
 
+### Variations
+
+A style can have variations: alternative drum, bass and comp patterns, so
+the band doesn't repeat the same bars for the whole song. All built-in
+styles have a variation **B**, and every example style has a named one,
+such as **Walking**, **Montuno**, **Breakdown**, **Half-Time** or **Chorus**.
+
+**Variation** in the toolbar chooses what the band plays:
+
+- **Auto: in turn** (the default) goes through the main pattern and the
+  variations in order, every 8 bars. **every … bars** sets the distance,
+  rounded up to whole patterns.
+- **Auto: random** picks a different one each time.
+- **Main** or a variation's name stays on that pattern.
+
+The label next to it shows what is playing, and a change takes effect at
+the next bar. Presets store this setting. Styles without variations
+disable the control.
+
 ### Style editor
 
 **Window ▸ Style Editor…** (Ctrl+E) opens a separate window to change a
@@ -80,6 +99,11 @@ The window, from top to bottom:
 - **Instruments**: program and velocity for comp and bass, close or power
   chords for the comp, and the pad program and whether the pad is on by
   default.
+- **Pattern** chooses what the grids show: the main pattern or a variation.
+  **Add Variation** copies the pattern shown, so you only change what
+  should differ. **Rename…** and **Remove** act on the open variation.
+  Switch off **Own drums**, **Own bass** or **Own comp** to let that part
+  play the main pattern; the Fill tab has the same switch.
 - **Groove** tab: the drum grid with the bass and comp tracks below it,
   step by step in line. Bars are marked by heavy lines and bold numbers.
 - **Fill** tab: a one-bar drum grid played on the last bar of each phrase.
@@ -109,7 +133,8 @@ Trying and keeping a style:
   its tempo, swing and instruments, without changing the style list or the
   main window's settings. Edits are heard from the next bar. Pressing Test
   again, Stop in the main window, or closing the editor goes back to the
-  selected style; if Test started the band, it stops it too. The chords
+  selected style; if Test started the band, it stops it too. Test plays
+  the pattern open in the editor and follows **Pattern**. The chords
   come from the current mode, so it works with the progression or a live
   keyboard.
 - **Apply** (Ctrl+Return) puts the style into the style list and selects

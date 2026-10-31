@@ -28,6 +28,17 @@
         <bass program="34" velocity="104">RRRR RRRR | RRRR RR5A</bass>
         <comp program="29" velocity="92" voicing="power">C--C --C- | C--C -.C.</comp>
         <pad program="18" enabled="false"/>
+
+        <!-- Bigger section: open ride, busier kick and bass, held chords. -->
+        <variation name="Chorus">
+            <drums>
+                <row drum="ride">  XxXx XxXx | XxXx XxXx</row>
+                <row drum="snare"> ..X. ..X. | ..X. ..X.</row>
+                <row drum="kick">  X.xX X.x. | X.xX X.xx</row>
+            </drums>
+            <bass>RR5R 8R5R | RR5R 8R5A</bass>
+            <comp>C--- C--- | C--- C-C-</comp>
+        </variation>
     </style>
 
 </midicombo-styles>

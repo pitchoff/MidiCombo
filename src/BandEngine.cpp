@@ -181,6 +181,13 @@ void BandEngine::setLiveChord(const mc::Chord &chord)
     m_liveChord = chord;
 }
 
+void BandEngine::setVariationPlan(mc::VariationMode mode, int fixed, int everyBars)
+{
+    m_variationMode = mode;
+    m_variationFixed = fixed;
+    m_variationEvery = everyBars;
+}
+
 void BandEngine::run(bool countIn)
 {
     m_tActive.clear();
@@ -189,6 +196,8 @@ void BandEngine::run(bool countIn)
     m_tCompVoicing.clear();
     m_tPadVoicing.clear();
     m_tLastBass = -1;
+    m_tVariation = 0;
+    m_tVariationName.clear();
     m_tCountedIn = countIn;
 
     auto beatStart = steady_clock::now() + milliseconds(50);
@@ -204,6 +213,8 @@ void BandEngine::run(bool countIn)
         }
         if (m_tStyle != previousStyle && m_tChord.isValid())
             voiceComp(); // the new style may voice chords differently
+        if (bar >= 0)
+            updateVariation(bar);
         const int beats = m_tStyle->beatsPerBar;
         for (int beat = 0; beat < beats && m_running; ++beat) {
             const double beatSeconds = 60.0 / std::clamp(m_tempo.load(), 20, 400);
@@ -231,6 +242,28 @@ void BandEngine::run(bool countIn)
     m_tActive.clear();
     m_midi->allNotesOff();
     emit chordChanged(QString());
+    emit variationChanged(QString());
+}
+
+// Called at every bar start. A style change may leave fewer variations.
+void BandEngine::updateVariation(int bar)
+{
+    const mc::Style &s = *m_tStyle;
+    const int count = s.variationCount();
+    const mc::VariationMode mode = m_variationMode;
+    if (mode == mc::VariationMode::Fixed) {
+        m_tVariation = std::clamp(m_variationFixed.load(), 0, count - 1);
+    } else {
+        if (m_tVariation >= count)
+            m_tVariation = 0;
+        if (bar > 0 && bar % mc::variationInterval(m_variationEvery, s.bars) == 0)
+            m_tVariation = mc::nextVariation(mode, m_tVariation, count, m_rng());
+    }
+    const std::string name = m_tVariation == 0 ? "Main" : s.variations[m_tVariation - 1].name;
+    if (name != m_tVariationName) {
+        m_tVariationName = name;
+        emit variationChanged(QString::fromStdString(name));
+    }
 }
 
 void BandEngine::countInTick(int beat, int tick)
@@ -319,8 +352,9 @@ void BandEngine::playDrums(int bar, int stepInBar, int patternStep, int stepTick
 {
     const mc::Style &s = *m_tStyle;
     const int phrase = phraseLength();
-    const bool fillBar = !s.fill.empty() && (bar + 1) % phrase == 0;
-    const auto &rows = fillBar ? s.fill : s.drums;
+    const auto &fill = s.fillOf(m_tVariation);
+    const bool fillBar = !fill.empty() && (bar + 1) % phrase == 0;
+    const auto &rows = fillBar ? fill : s.drumsOf(m_tVariation);
     const int step = fillBar ? stepInBar : patternStep;
 
     for (const auto &row : rows) {
@@ -336,10 +370,11 @@ void BandEngine::playDrums(int bar, int stepInBar, int patternStep, int stepTick
 bool BandEngine::playBassStep(int patternStep, int bar, int barTick, int stepTicks, bool downbeat)
 {
     const mc::Style &s = *m_tStyle;
-    const char c = s.bass[patternStep];
+    const std::string &bass = s.bassOf(m_tVariation);
+    const char c = bass[patternStep];
     if (c == '.' || c == '-')
         return false;
-    const int len = holdSteps(s.bass, patternStep);
+    const int len = holdSteps(bass, patternStep);
     const int note = bassNote(c, bar, barTick + len * stepTicks);
     if (note < 0)
         return false;
@@ -385,8 +420,9 @@ void BandEngine::voiceComp()
 bool BandEngine::playCompStep(int patternStep, int stepTicks)
 {
     const mc::Style &s = *m_tStyle;
-    const char c = s.comp[patternStep];
-    const int len = holdSteps(s.comp, patternStep);
+    const std::string &comp = s.compOf(m_tVariation);
+    const char c = comp[patternStep];
+    const int len = holdSteps(comp, patternStep);
     if (c == 'C' || c == 'c') {
         stopPart(Piano);
         const int vel = c == 'C' ? s.compVelocity + 8 : s.compVelocity - 15;
@@ -423,7 +459,7 @@ void BandEngine::retrigger(Part part)
         const int note = bassRoot(m_tChord.bass >= 0 ? m_tChord.bass : m_tChord.root);
         playNote(Bass, note, humanize(s.bassVelocity - 10), off);
         m_tLastBass = note;
-    } else if (part == Piano && s.comp.find_first_of("123456789") == std::string::npos) {
+    } else if (part == Piano && s.compOf(m_tVariation).find_first_of("123456789") == std::string::npos) {
         for (int n : m_tCompVoicing)
             playNote(Piano, n, humanize(s.compVelocity - 15), off);
     }

@@ -70,6 +70,7 @@ MainWindow::MainWindow(MidiEngine *midi, QWidget *parent)
 
     connect(m_engine, &BandEngine::positionChanged, this, &MainWindow::onPosition, Qt::QueuedConnection);
     connect(m_engine, &BandEngine::chordChanged, this, &MainWindow::onBandChord, Qt::QueuedConnection);
+    connect(m_engine, &BandEngine::variationChanged, m_variationLabel, &QLabel::setText, Qt::QueuedConnection);
     connect(m_midi, &MidiEngine::noteOnReceived, this, &MainWindow::onNoteOn);
     connect(m_midi, &MidiEngine::noteOffReceived, this, &MainWindow::onNoteOff);
     connect(m_midi, &MidiEngine::controlReceived, this, &MainWindow::onControl);
@@ -121,6 +122,24 @@ void MainWindow::buildUi()
         m_styleCombo->addItem(QString::fromStdString(s.name));
     tb->addWidget(m_styleCombo);
     connect(m_styleCombo, &QComboBox::currentIndexChanged, this, &MainWindow::onStyleChanged);
+
+    tb->addWidget(new QLabel(tr("  Variation ")));
+    m_variationCombo = new QComboBox;
+    m_variationCombo->setToolTip(tr("Which pattern of the style the band plays: change automatically, or stay on one"));
+    tb->addWidget(m_variationCombo);
+    m_variationEvery = new QSpinBox;
+    m_variationEvery->setRange(1, 64);
+    m_variationEvery->setValue(8);
+    m_variationEvery->setPrefix(tr("every "));
+    m_variationEvery->setSuffix(tr(" bars"));
+    m_variationEvery->setToolTip(tr("Bars between automatic changes, rounded up to whole patterns"));
+    tb->addWidget(m_variationEvery);
+    m_variationLabel = new QLabel;
+    m_variationLabel->setMinimumWidth(50);
+    m_variationLabel->setToolTip(tr("The variation playing now"));
+    tb->addWidget(m_variationLabel);
+    connect(m_variationCombo, &QComboBox::currentIndexChanged, this, &MainWindow::sendVariation);
+    connect(m_variationEvery, &QSpinBox::valueChanged, this, &MainWindow::sendVariation);
 
     tb->addWidget(new QLabel(tr("  Tempo ")));
     m_tempo = new QSpinBox;
@@ -569,11 +588,12 @@ void MainWindow::showStyleEditor()
 
 // The band plays the style from the style editor, with its tempo, swing and
 // instruments, until endStyleTest(). The main window's settings are kept.
-void MainWindow::testStyle(const mc::Style &style)
+void MainWindow::testStyle(const mc::Style &style, int variation)
 {
     const bool starting = !m_testing;
     m_testing = true;
     m_testStyle = style;
+    m_testVariation = variation;
     sendStyle();
     sendMixer();
     if (starting) {
@@ -611,7 +631,68 @@ void MainWindow::sendStyle()
         m_engine->setStyle(currentStyle());
         m_engine->setTempo(m_tempo->value());
         m_engine->setSwing(m_swing->value() / 100.0);
+        updateVariationCombo();
     }
+    sendVariation();
+}
+
+// The combo holds -1 for "in turn", -2 for "random", otherwise the index of
+// the variation (0 = main pattern).
+void MainWindow::sendVariation()
+{
+    const int data = m_variationCombo->currentData().toInt();
+    if (m_testing) // a test plays the variation open in the style editor
+        m_engine->setVariationPlan(mc::VariationMode::Fixed, m_testVariation, m_variationEvery->value());
+    else if (data < 0)
+        m_engine->setVariationPlan(data == -2 ? mc::VariationMode::Random : mc::VariationMode::InTurn, 0,
+                                   m_variationEvery->value());
+    else
+        m_engine->setVariationPlan(mc::VariationMode::Fixed, data, m_variationEvery->value());
+    m_variationEvery->setEnabled(data < 0 && m_variationCombo->isEnabled());
+}
+
+void MainWindow::updateVariationCombo()
+{
+    const QString key = variationKey();
+    {
+        QSignalBlocker block(m_variationCombo);
+        m_variationCombo->clear();
+        m_variationCombo->addItem(tr("Auto: in turn"), -1);
+        m_variationCombo->addItem(tr("Auto: random"), -2);
+        m_variationCombo->addItem(tr("Main"), 0);
+        const mc::Style &style = currentStyle();
+        for (int i = 0; i < static_cast<int>(style.variations.size()); ++i)
+            m_variationCombo->addItem(QString::fromStdString(style.variations[i].name), i + 1);
+        m_variationCombo->setEnabled(!style.variations.empty());
+    }
+    setVariationKey(key);
+}
+
+QString MainWindow::variationKey() const
+{
+    switch (m_variationCombo->currentData().toInt()) {
+    case -1: return QStringLiteral("in-turn");
+    case -2: return QStringLiteral("random");
+    case 0: return m_variationCombo->count() > 0 ? QStringLiteral("Main") : QStringLiteral("in-turn");
+    default: return m_variationCombo->currentText();
+    }
+}
+
+// A variation the current style doesn't have falls back to changing in turn.
+void MainWindow::setVariationKey(const QString &key)
+{
+    int index = 0;
+    if (key == QLatin1String("random"))
+        index = 1;
+    else if (key == QLatin1String("Main"))
+        index = 2;
+    else if (key != QLatin1String("in-turn"))
+        index = std::max(0, m_variationCombo->findText(key));
+    {
+        QSignalBlocker block(m_variationCombo);
+        m_variationCombo->setCurrentIndex(index);
+    }
+    sendVariation();
 }
 
 void MainWindow::updateStyleEditor()
@@ -717,6 +798,10 @@ void MainWindow::applyPreset(const PresetData &preset)
         m_tempo->setValue(preset.tempo);
     if (preset.swing >= 0)
         m_swing->setValue(preset.swing);
+    if (preset.variationEvery > 0)
+        m_variationEvery->setValue(preset.variationEvery);
+    if (!preset.variation.isEmpty())
+        setVariationKey(preset.variation);
 
     for (int i = 0; i < PresetData::PartCount; ++i) {
         const PresetData::Part &part = preset.parts[i];
@@ -745,6 +830,8 @@ PresetData MainWindow::currentPreset(const QString &name) const
     preset.style = m_styleCombo->currentText();
     preset.tempo = m_tempo->value();
     preset.swing = m_swing->value();
+    preset.variation = variationKey();
+    preset.variationEvery = m_variationEvery->value();
     preset.transpose = m_transpose->value();
     preset.progression = m_progressionEdit->toPlainText().trimmed();
     for (int i = 0; i < PresetData::PartCount; ++i) {
@@ -1011,6 +1098,8 @@ void MainWindow::loadSettings()
     m_tempo->setValue(s.value("tempo", currentStyle().tempo).toInt());
     if (s.contains("swing"))
         m_swing->setValue(s.value("swing").toInt());
+    m_variationEvery->setValue(s.value("variationEvery", 8).toInt());
+    setVariationKey(s.value("variation", QStringLiteral("in-turn")).toString());
     m_countIn->setChecked(s.value("countIn", true).toBool());
 
     const QString defaultText = QString::fromUtf8(mc::progressionPresets()[3].text);
@@ -1061,6 +1150,8 @@ void MainWindow::saveSettings()
     s.setValue("styleFiles", m_styleFiles);
     s.setValue("tempo", m_tempo->value());
     s.setValue("swing", m_swing->value());
+    s.setValue("variation", variationKey());
+    s.setValue("variationEvery", m_variationEvery->value());
     s.setValue("countIn", m_countIn->isChecked());
     s.setValue("progression", m_progressionEdit->toPlainText());
     s.setValue("transpose", m_transpose->value());

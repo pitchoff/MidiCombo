@@ -128,6 +128,7 @@ Presets…** adds all of them to the preset list and applies the first.
 | `<tempo>` | BPM, 30–320 | current tempo is kept |
 | `<swing>` | percent, 0–100 | the style's swing |
 | `<transpose>` | semitones, −11 to 11 | 0 |
+| `<variation>` | how the band changes variations, see [below](#variation) | current setting is kept |
 | `<progression>` | progression text ([section 2](#2-chord-progressions)), **required** | the progression is empty |
 | `<band>` | zero or more `<part>` elements | the style's defaults |
 
@@ -142,6 +143,19 @@ file is rejected. Values outside the range are clamped.
 | `enabled` | `true` or `false` (anything other than `true` means off) |
 | `program` | GM program number counted from 0 (the user interface shows it counted from 1). For `drums`, a drum kit number ([5.3](#53-drum-kits)). Unknown numbers leave the instrument unchanged. |
 | `volume` | 0–127 (MIDI CC 7) |
+
+### `<variation>`
+
+Optional. `<variation select="in-turn" every="8"/>` sets how the band
+chooses among the style's variations:
+
+| Attribute | Values |
+|---|---|
+| `select` | `in-turn`, `random`, `Main`, or the name of a variation |
+| `every` | bars between automatic changes, rounded up to whole patterns |
+
+If the style has no variation of that name, the band changes in turn.
+Without the element, the current setting stays.
 
 ### How a preset is applied
 
@@ -211,6 +225,7 @@ instead of writing the XML by hand.
 | `<bass>` | `program` 0–127 (default instrument), `velocity` 1–127, pattern as text | program 33, velocity 96, rests |
 | `<comp>` | `program` 0–127, `velocity` 1–127, `voicing` `close` or `power`, pattern as text | program 0, velocity 78, close, rests |
 | `<pad>` | `program` 0–127, `enabled` `true` if the pad should be on by default | program 48, off |
+| `<variation name="…">` | alternative patterns, any number, see [Variations](#variations) | none |
 
 `<row>` takes the instrument as `note="38"` (GM percussion note 0–127) or
 `drum="snare"` (see [5.1](#51-drum-names)), and the pattern as text.
@@ -296,6 +311,35 @@ is always 8 bars. The fill replaces the drums in the last bar of each
 phrase, and the crash plays on the first beat of each phrase (on the very
 first bar only after a count-in).
 
+### Variations
+
+A `<style>` can contain any number of `<variation>` elements, after the
+main pattern. Each is an alternative arrangement on the same grid:
+
+```xml
+<variation name="Chorus">
+    <drums>
+        <row drum="ride">  XxXx XxXx | XxXx XxXx</row>
+        <row drum="snare"> ..X. ..X. | ..X. ..X.</row>
+        <row drum="kick">  X.xX X.x. | X.xX X.xx</row>
+    </drums>
+    <bass>RR5R 8R5R | RR5R 8R5A</bass>
+    <comp>C--- C--- | C--- C-C-</comp>
+</variation>
+```
+
+- `name` is required and must be unique within the style. `Main`,
+  `in-turn` and `random` are reserved.
+- `<drums>`, `<fill>`, `<bass>` and `<comp>` are all optional. A part that
+  is missing is taken from the main pattern, so a variation can change the
+  bass alone. To silence a part, write rests, because an empty `<bass>` or
+  `<drums>` also means "same as main".
+- Patterns follow the same rules and lengths as the main pattern. Meter,
+  tempo, swing, programs, velocities and voicing are shared, and attributes
+  on a variation's `<bass>` and `<comp>` are ignored.
+
+Older versions of MidiCombo skip `<variation>` and play the main pattern.
+
 ### Characters outside these tables
 
 Any other character in a pattern is treated as a rest.
@@ -358,8 +402,13 @@ because it plays nothing.
 
 The fill is always converted as one bar.
 
-**Test** (Ctrl+T) plays the edited style without adding it to the style
-list. **Apply** adds it to the list or replaces the style of the same
+**Variations.** **Pattern** chooses what the grids show. A variation
+writes one `<variation>` element, and Own drums, Own bass, Own comp and
+"Use its own fill" decide whether that part is written. Switched off, the
+part is left out and is taken from the main pattern.
+
+**Test** (Ctrl+T) plays the edited style, in the pattern open in the
+editor, without adding it to the style list. **Apply** adds it to the list or replaces the style of the same
 name. **Save to File…** writes it to a style file.
 
 **What Save to File writes.** The editor writes a normal style file that
@@ -367,7 +416,8 @@ can be edited by hand afterwards. Saving into an existing style file
 replaces the style with the same name, or adds it, and keeps the other
 styles. Files written by the editor always look like this:
 
-- Every element is written, including `<crash>`, `<swing>` and `<pad>`.
+- Every element is written, including `<crash>`, `<swing>` and `<pad>`,
+  followed by the variations.
   `<fill>` is left out when the fill is off, and `voicing="power"` is
   written only for power chords.
 - Drum rows use `drum="…"` when the note has a name in

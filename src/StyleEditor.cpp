@@ -739,6 +739,35 @@ StyleEditor::StyleEditor(QWidget *parent)
     ig->setColumnStretch(1, 1);
     layout->addWidget(instruments);
 
+    // Variations
+    auto *variations = new QHBoxLayout;
+    variations->addWidget(new QLabel(tr("Pattern:")));
+    m_variationCombo = new QComboBox;
+    m_variationCombo->setToolTip(tr("Main pattern or a variation. The grids below show the one chosen here."));
+    connect(m_variationCombo, &QComboBox::activated, this, &StyleEditor::chooseVariation);
+    variations->addWidget(m_variationCombo);
+    auto *addVariationButton = new QPushButton(tr("Add Variation"));
+    addVariationButton->setToolTip(tr("Add a variation, starting as a copy of the pattern shown"));
+    connect(addVariationButton, &QPushButton::clicked, this, &StyleEditor::addVariation);
+    variations->addWidget(addVariationButton);
+    m_renameVariation = new QPushButton(tr("Rename…"));
+    connect(m_renameVariation, &QPushButton::clicked, this, &StyleEditor::renameVariation);
+    variations->addWidget(m_renameVariation);
+    m_removeVariation = new QPushButton(tr("Remove"));
+    connect(m_removeVariation, &QPushButton::clicked, this, &StyleEditor::removeVariation);
+    variations->addWidget(m_removeVariation);
+    variations->addSpacing(12);
+    m_ownDrums = new QCheckBox(tr("Own drums"));
+    m_ownBass = new QCheckBox(tr("Own bass"));
+    m_ownComp = new QCheckBox(tr("Own comp"));
+    for (QCheckBox *own : {m_ownDrums, m_ownBass, m_ownComp}) {
+        own->setToolTip(tr("Off: this part plays the main pattern"));
+        connect(own, &QCheckBox::toggled, this, &StyleEditor::ownPartToggled);
+        variations->addWidget(own);
+    }
+    variations->addStretch();
+    layout->addLayout(variations);
+
     // Patterns
     auto *tabs = new QTabWidget;
     auto scrolled = [](QWidget *content) {
@@ -791,7 +820,8 @@ StyleEditor::StyleEditor(QWidget *parent)
            "velocity (accent, normal, soft, ghost), drag to paint. Click an instrument name to change it.<br>"
            "<b>Tracks:</b> click a step and type a token (bass: R 3 5 6 7 8 A, comp: C c 1–9), <i>-</i> holds, "
            "<i>.</i> or Del rests. Drag a note to change its length, double-click to add or remove a note, "
-           "right-click for all tokens."));
+           "right-click for all tokens.<br>"
+           "<b>Variations:</b> Pattern chooses what the grids show. Parts without \"Own\" play the main pattern."));
     help->setWordWrap(true);
     help->setForegroundRole(QPalette::PlaceholderText);
     layout->addWidget(help);
@@ -808,13 +838,13 @@ StyleEditor::StyleEditor(QWidget *parent)
     m_testTimer->setInterval(150);
     connect(m_testTimer, &QTimer::timeout, this, [this] {
         if (isTesting())
-            emit testStyle(style());
+            emit testStyle(style(), m_variation);
     });
     connect(m_testButton, &QPushButton::toggled, this, [this](bool on) {
         m_testButton->setIcon(QWidget::style()->standardIcon(on ? QStyle::SP_MediaStop : QStyle::SP_MediaPlay));
         m_testTimer->stop();
         if (on)
-            emit testStyle(style());
+            emit testStyle(style(), m_variation);
         else
             emit testStopped();
     });
@@ -913,12 +943,9 @@ void StyleEditor::load(const mc::Style &style)
     for (StepGrid *g : std::initializer_list<StepGrid *>{m_drums, m_bass, m_comp})
         g->setMeter(s.beatsPerBar, s.stepsPerBeat, s.stepCount());
     m_fill->setMeter(s.beatsPerBar, s.stepsPerBeat, s.stepsPerBar());
-    m_drums->setRows(s.drums);
-    m_fill->setRows(s.fill);
-    m_fillEnabled->setChecked(!s.fill.empty());
-    m_fill->setEnabled(!s.fill.empty());
-    m_bass->setPattern(s.bass);
-    m_comp->setPattern(s.comp);
+    m_patterns = s;
+    updateVariationCombo();
+    showVariation(0);
 
     {
         QSignalBlocker block(m_styleCombo);
@@ -939,11 +966,12 @@ mc::Style StyleEditor::style() const
     s.swing = m_swing->value() / 100.0;
     s.swingUnit = m_swingUnit->currentData().toInt();
     s.crashNote = m_crash->currentData().toInt();
-    s.drums = m_drums->rows();
-    if (m_fillEnabled->isChecked())
-        s.fill = m_fill->rows();
-    s.bass = m_bass->pattern();
-    s.comp = m_comp->pattern();
+    s.drums = m_patterns.drums;
+    s.fill = m_patterns.fill;
+    s.bass = m_patterns.bass;
+    s.comp = m_patterns.comp;
+    s.variations = m_patterns.variations;
+    storePatterns(s);
     s.powerChords = m_voicing->currentIndex() == 1;
     s.pianoProgram = m_compProgram->currentIndex();
     s.bassProgram = m_bassProgram->currentIndex();
@@ -954,24 +982,188 @@ mc::Style StyleEditor::style() const
     return s;
 }
 
+// Writes the grids into the open variation of `s`.
+void StyleEditor::storePatterns(mc::Style &s) const
+{
+    if (m_variation == 0) {
+        s.drums = m_drums->rows();
+        s.fill.clear();
+        if (m_fillEnabled->isChecked())
+            s.fill = m_fill->rows();
+        s.bass = m_bass->pattern();
+        s.comp = m_comp->pattern();
+        return;
+    }
+    mc::StyleVariation &v = s.variations[m_variation - 1];
+    v.drums.clear();
+    v.fill.clear();
+    v.bass.clear();
+    v.comp.clear();
+    if (m_ownDrums->isChecked())
+        v.drums = m_drums->rows();
+    if (m_fillEnabled->isChecked())
+        v.fill = m_fill->rows();
+    if (m_ownBass->isChecked())
+        v.bass = m_bass->pattern();
+    if (m_ownComp->isChecked())
+        v.comp = m_comp->pattern();
+}
+
+// Puts a variation into the grids. Parts it shares with the main pattern
+// are shown read-only.
+void StyleEditor::showVariation(int index)
+{
+    const bool loading = m_loading;
+    m_loading = true;
+    m_variation = index;
+    const mc::StyleVariation *v = index > 0 ? &m_patterns.variations[index - 1] : nullptr;
+    const bool ownDrums = !v || !v->drums.empty();
+    const bool ownFill = v ? !v->fill.empty() : !m_patterns.fill.empty();
+    const bool ownBass = !v || !v->bass.empty();
+    const bool ownComp = !v || !v->comp.empty();
+
+    m_drums->setRows(m_patterns.drumsOf(index));
+    m_fill->setRows(m_patterns.fillOf(index));
+    m_bass->setPattern(m_patterns.bassOf(index));
+    m_comp->setPattern(m_patterns.compOf(index));
+    m_ownDrums->setChecked(ownDrums);
+    m_ownBass->setChecked(ownBass);
+    m_ownComp->setChecked(ownComp);
+    m_fillEnabled->setChecked(ownFill);
+    m_fillEnabled->setText(index > 0 ? tr("Use its own fill (off: the main pattern's fill)")
+                                     : tr("Play a fill on the last bar of every phrase"));
+    m_drums->setEnabled(ownDrums);
+    m_fill->setEnabled(ownFill);
+    m_bass->setEnabled(ownBass);
+    m_comp->setEnabled(ownComp);
+    for (QCheckBox *own : {m_ownDrums, m_ownBass, m_ownComp})
+        own->setVisible(index > 0);
+    m_removeVariation->setEnabled(index > 0);
+    m_renameVariation->setEnabled(index > 0);
+    {
+        QSignalBlocker block(m_variationCombo);
+        m_variationCombo->setCurrentIndex(index);
+    }
+    m_loading = loading;
+    if (isTesting())
+        m_testTimer->start(); // the band follows the open variation
+}
+
+void StyleEditor::updateVariationCombo()
+{
+    QSignalBlocker block(m_variationCombo);
+    m_variationCombo->clear();
+    m_variationCombo->addItem(tr("Main"));
+    for (const auto &v : m_patterns.variations)
+        m_variationCombo->addItem(QString::fromStdString(v.name));
+}
+
+void StyleEditor::chooseVariation(int index)
+{
+    if (index == m_variation)
+        return;
+    storePatterns(m_patterns);
+    showVariation(index);
+}
+
+void StyleEditor::addVariation()
+{
+    storePatterns(m_patterns);
+    // Named B, C, ... after the main pattern
+    QString name;
+    for (char c = 'B'; c <= 'Z' && name.isEmpty(); ++c) {
+        const std::string candidate(1, c);
+        if (std::none_of(m_patterns.variations.begin(), m_patterns.variations.end(),
+                         [&](const mc::StyleVariation &v) { return v.name == candidate; }))
+            name = QString::fromStdString(candidate);
+    }
+    if (name.isEmpty())
+        return;
+    const int shown = m_variation;
+    m_patterns.variations.push_back({name.toStdString(), m_patterns.drumsOf(shown), m_patterns.fillOf(shown),
+                                     m_patterns.bassOf(shown), m_patterns.compOf(shown)});
+    updateVariationCombo();
+    showVariation(static_cast<int>(m_patterns.variations.size()));
+    setModified(true);
+}
+
+void StyleEditor::removeVariation()
+{
+    if (m_variation == 0)
+        return;
+    m_patterns.variations.erase(m_patterns.variations.begin() + m_variation - 1);
+    m_variation = 0; // the open variation is gone, nothing to store
+    updateVariationCombo();
+    showVariation(0);
+    setModified(true);
+}
+
+void StyleEditor::renameVariation()
+{
+    if (m_variation == 0)
+        return;
+    mc::StyleVariation &v = m_patterns.variations[m_variation - 1];
+    bool ok = false;
+    const QString name = QInputDialog::getText(this, tr("Rename Variation"), tr("Name:"), QLineEdit::Normal,
+                                               QString::fromStdString(v.name), &ok).trimmed();
+    if (!ok || name.isEmpty() || name.toStdString() == v.name)
+        return;
+    const std::string previous = v.name;
+    v.name = name.toStdString();
+    std::string error;
+    if (!mc::validateStyle(style(), error)
+        && QString::fromStdString(error).contains(QLatin1String("named"))) {
+        v.name = previous;
+        QMessageBox::warning(this, tr("Rename Variation"), tr("The name '%1' is already used or reserved.").arg(name));
+        return;
+    }
+    updateVariationCombo();
+    m_variationCombo->setCurrentIndex(m_variation);
+    setModified(true);
+}
+
+// Switching a part off shows the main pattern again; switching it on starts
+// from what is shown.
+void StyleEditor::ownPartToggled()
+{
+    if (m_loading)
+        return;
+    m_drums->setEnabled(m_ownDrums->isChecked());
+    m_bass->setEnabled(m_ownBass->isChecked());
+    m_comp->setEnabled(m_ownComp->isChecked());
+    if (!m_ownDrums->isChecked())
+        m_drums->setRows(m_patterns.drums);
+    if (!m_ownBass->isChecked())
+        m_bass->setPattern(m_patterns.bass);
+    if (!m_ownComp->isChecked())
+        m_comp->setPattern(m_patterns.comp);
+    setModified(true);
+}
+
 void StyleEditor::onMeterChanged()
 {
     if (m_loading)
         return;
     mc::Style current = style();
-    current.fill = m_fill->rows(); // also while the fill is switched off
+    const bool fillOn = m_fillEnabled->isChecked();
+    if (m_variation == 0)
+        current.fill = m_fill->rows(); // also while the fill is switched off
     const mc::Style resized = mc::resizedStyle(current, m_beatsSpin->value(), m_stepsCombo->currentData().toInt(),
                                                m_barsSpin->value());
     m_beats = resized.beatsPerBar;
     m_stepsPerBeat = resized.stepsPerBeat;
     m_bars = resized.bars;
+    m_patterns = resized;
     for (StepGrid *g : std::initializer_list<StepGrid *>{m_drums, m_bass, m_comp})
         g->setMeter(m_beats, m_stepsPerBeat, resized.stepCount());
     m_fill->setMeter(m_beats, m_stepsPerBeat, resized.stepsPerBar());
-    m_drums->setRows(resized.drums);
-    m_fill->setRows(resized.fill);
-    m_bass->setPattern(resized.bass);
-    m_comp->setPattern(resized.comp);
+    showVariation(m_variation);
+    if (m_variation == 0) {
+        m_loading = true;
+        m_fillEnabled->setChecked(fillOn);
+        m_fill->setEnabled(fillOn);
+        m_loading = false;
+    }
     setModified(true);
 }
 
@@ -980,7 +1172,9 @@ void StyleEditor::onFillToggled(bool on)
     m_fill->setEnabled(on);
     if (m_loading)
         return;
-    if (on && m_fill->rows().empty()) {
+    if (!on && m_variation > 0) {
+        m_fill->setRows(m_patterns.fill);
+    } else if (on && m_fill->rows().empty()) {
         // Start from the first bar of the groove
         std::vector<mc::DrumRow> rows = m_drums->rows();
         for (auto &r : rows)

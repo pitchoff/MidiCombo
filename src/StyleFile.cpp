@@ -80,6 +80,28 @@ std::vector<mc::DrumRow> readRows(QXmlStreamReader &xml)
     return rows;
 }
 
+mc::StyleVariation readVariation(QXmlStreamReader &xml)
+{
+    mc::StyleVariation v;
+    v.name = xml.attributes().value(QLatin1String("name")).toString().trimmed().toStdString();
+    if (v.name.empty())
+        xml.raiseError(QStringLiteral("<variation> needs a name attribute"));
+    while (xml.readNextStartElement()) {
+        const auto name = xml.name();
+        if (name == QLatin1String("drums"))
+            v.drums = readRows(xml);
+        else if (name == QLatin1String("fill"))
+            v.fill = readRows(xml);
+        else if (name == QLatin1String("bass"))
+            v.bass = xml.readElementText().toStdString();
+        else if (name == QLatin1String("comp"))
+            v.comp = xml.readElementText().toStdString();
+        else
+            xml.skipCurrentElement();
+    }
+    return v;
+}
+
 mc::Style readStyle(QXmlStreamReader &xml)
 {
     mc::Style s;
@@ -129,6 +151,8 @@ mc::Style readStyle(QXmlStreamReader &xml)
             s.padProgram = intAttr(xml, "program", s.padProgram, 0, 127);
             s.padDefault = xml.attributes().value(QLatin1String("enabled")) == QLatin1String("true");
             xml.skipCurrentElement();
+        } else if (name == QLatin1String("variation")) {
+            s.variations.push_back(readVariation(xml));
         } else {
             xml.skipCurrentElement(); // unknown elements are ignored for forward compatibility
         }
@@ -223,6 +247,20 @@ void writeStyle(QXmlStreamWriter &xml, const mc::Style &s)
     xml.writeEmptyElement("pad");
     xml.writeAttribute("program", QString::number(s.padProgram));
     xml.writeAttribute("enabled", s.padDefault ? "true" : "false");
+
+    for (const auto &v : s.variations) {
+        xml.writeStartElement("variation");
+        xml.writeAttribute("name", QString::fromStdString(v.name));
+        if (!v.drums.empty())
+            writeRows(xml, "drums", v.drums, s);
+        if (!v.fill.empty())
+            writeRows(xml, "fill", v.fill, s);
+        if (!v.bass.empty())
+            xml.writeTextElement("bass", formatPattern(v.bass, s));
+        if (!v.comp.empty())
+            xml.writeTextElement("comp", formatPattern(v.comp, s));
+        xml.writeEndElement();
+    }
 
     xml.writeEndElement();
 }

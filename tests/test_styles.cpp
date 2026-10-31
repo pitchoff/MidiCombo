@@ -118,10 +118,14 @@ int main()
     std::vector<mc::Style> all = mc::builtinStyles();
     for (const QString &name : QDir(QStringLiteral(EXAMPLES_DIR "/styles")).entryList({"*.xml"})) {
         std::vector<mc::Style> loaded;
-        if (readStyleFile(QStringLiteral(EXAMPLES_DIR "/styles/") + name, loaded, error))
+        check(readStyleFile(QStringLiteral(EXAMPLES_DIR "/styles/") + name, loaded, error),
+              name.toStdString() + ": " + error.toStdString());
+        for (const auto &style : loaded)
+            check(!style.variations.empty(), "example has a variation: " + style.name);
             all.insert(all.end(), loaded.begin(), loaded.end());
     }
     all.back().crashNote = 0;
+    all.back().variations.push_back({"Bridge", all.back().drums, all.back().fill, "", ""});
     all.back().drums.push_back({90, std::string(all.back().stepCount(), 'x')}); // a note without a name
     const QString roundTrip = dir.filePath(QStringLiteral("roundtrip.xml"));
     check(writeStyleFile(roundTrip, all, error), "write styles: " + error.toStdString());
@@ -141,6 +145,16 @@ int main()
             same = a.drums[r].note == b.drums[r].note && a.drums[r].steps == b.drums[r].steps;
         for (size_t r = 0; same && r < a.fill.size(); ++r)
             same = a.fill[r].note == b.fill[r].note && a.fill[r].steps == b.fill[r].steps;
+        same = same && a.variations.size() == b.variations.size();
+        for (size_t v = 0; same && v < a.variations.size(); ++v) {
+            const mc::StyleVariation &x = a.variations[v], &y = b.variations[v];
+            same = x.name == y.name && x.bass == y.bass && x.comp == y.comp && x.drums.size() == y.drums.size()
+                   && x.fill.size() == y.fill.size();
+            for (size_t r = 0; same && r < x.drums.size(); ++r)
+                same = x.drums[r].note == y.drums[r].note && x.drums[r].steps == y.drums[r].steps;
+            for (size_t r = 0; same && r < x.fill.size(); ++r)
+                same = x.fill[r].note == y.fill[r].note && x.fill[r].steps == y.fill[r].steps;
+        }
         check(same, "round trip of style " + a.name);
     }
     check(drumName(38) == QLatin1String("snare") && drumNote(QStringLiteral("kick")) == 36 && drumName(90).isEmpty(),

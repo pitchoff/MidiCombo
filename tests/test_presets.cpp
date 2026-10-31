@@ -40,6 +40,8 @@ int main()
     a.tempo = 96;
     a.swing = 40;
     a.transpose = -3;
+    a.variation = QStringLiteral("random");
+    a.variationEvery = 4;
     a.progression = QStringLiteral("# comment\n| F7 | Bb7 |\n| C7 / Bb7 / |");
     a.parts[1] = {true, false, 32, 90};
     a.parts[3] = {true, true, 89, 70};
@@ -59,6 +61,8 @@ int main()
         check(l.style == a.style, "style");
         check(l.tempo == 96 && l.swing == 40 && l.transpose == -3, "numbers");
         check(l.progression == a.progression, "progression text");
+        check(l.variation == a.variation && l.variationEvery == 4, "variation");
+        check(loaded[1].variation.isEmpty() && loaded[1].variationEvery == -1, "no variation");
         check(!l.parts[0].present && !l.parts[2].present, "absent parts stay absent");
         check(l.parts[1].present && !l.parts[1].enabled && l.parts[1].program == 32 && l.parts[1].volume == 90, "bass part");
         check(l.parts[3].present && l.parts[3].enabled && l.parts[3].program == 89, "pad part");

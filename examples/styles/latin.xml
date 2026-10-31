@@ -18,6 +18,12 @@
         <bass program="32" velocity="98">R--. 5-5.</bass>
         <comp program="0" velocity="76"> C-.c C-.c</comp>
         <pad program="61" enabled="false"/>
+
+        <!-- Syncopated piano montuno; the bass leaves the two-beat feel. -->
+        <variation name="Montuno">
+            <bass>R-.5 8-5.</bass>
+            <comp>C.cC .cC.</comp>
+        </variation>
     </style>
 
     <!-- Samba: surdo on the kick, shaker 16ths, syncopated guitar. -->
@@ -41,6 +47,19 @@
         <bass program="32" velocity="100">R--5 5--- R--5 5-A-</bass>
         <comp program="24" velocity="74"> C.c. .C.c .C.. C.c.</comp>
         <pad program="48" enabled="false"/>
+
+        <!-- Busier side stick and guitar, bass reaches for the octave. -->
+        <variation name="Partido">
+            <drums>
+                <row drum="shaker">    Xxox Xxox Xxox Xxox</row>
+                <row drum="side-stick">x..x .x.x .x.. x.x.</row>
+                <row drum="kick">      o..x X... o..x X...</row>
+                <row drum="high-agogo">x... .... ..x. ....</row>
+                <row drum="low-agogo"> .... x.x. .... x...</row>
+            </drums>
+            <bass>R--5 8--5 R--5 5-A-</bass>
+            <comp>.C.c .C.. C.c. .C.c</comp>
+        </variation>
     </style>
 
 </midicombo-styles>

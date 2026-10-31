@@ -26,6 +26,9 @@
 //     <comp program="25" velocity="78">..C- ..C- | ..C- ..C-</comp>
 //                                           <!-- voicing="power": root, fifth, octave -->
 //     <pad program="22" enabled="false"/>
+//     <variation name="B">                  <!-- any number; a missing part is taken from the main pattern -->
+//       <bass>R-5- R-5- | R-5- 5-A-</bass>
+//     </variation>
 //   </style>
 // </midicombo-styles>
 //

@@ -43,11 +43,14 @@ public:
     void setMode(ChordMode mode) { m_mode = mode; }
     void setLiveChord(const mc::Chord &chord);
     void setPartEnabled(Part part, bool enabled) { m_enabled[part] = enabled; }
+    // Takes effect at the next bar. `fixed` is used in VariationMode::Fixed.
+    void setVariationPlan(mc::VariationMode mode, int fixed, int everyBars);
 
 signals:
     // Emitted from the band thread; connect with queued connections.
     void positionChanged(int bar, int beat, int beatsPerBar); // bar -1 = count-in
     void chordChanged(const QString &name);
+    void variationChanged(const QString &name); // empty when the band stops
 
 private:
     struct ActiveNote {
@@ -61,6 +64,7 @@ private:
     void processTick(int bar, int beat, int tick);
     mc::Chord chordAt(int bar, int barTick);
     int phraseLength() const;
+    void updateVariation(int bar);
 
     void playDrums(int bar, int stepInBar, int patternStep, int stepTicks);
     bool playBassStep(int patternStep, int bar, int barTick, int stepTicks, bool downbeat);
@@ -83,6 +87,9 @@ private:
     std::atomic<double> m_swing{0.0};
     std::atomic<ChordMode> m_mode{ChordMode::Progression};
     std::atomic<bool> m_enabled[PartCount];
+    std::atomic<mc::VariationMode> m_variationMode{mc::VariationMode::InTurn};
+    std::atomic<int> m_variationFixed{0};
+    std::atomic<int> m_variationEvery{8};
 
     std::mutex m_mutex; // guards the three members below
     std::shared_ptr<const mc::Style> m_style;
@@ -98,6 +105,8 @@ private:
     std::vector<int> m_tCompVoicing;
     std::vector<int> m_tPadVoicing;
     int m_tLastBass = -1;
+    int m_tVariation = 0;
+    std::string m_tVariationName;
     bool m_tCountedIn = false;
     std::mt19937 m_rng{std::random_device{}()};
 };

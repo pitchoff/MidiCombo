@@ -144,9 +144,9 @@ public:
 signals:
     void applyRequested(const mc::Style &style);
     void savedToFile(const QString &path, const QString &styleName);
-    // While testing, the band plays the edited style; testStyle() is
-    // emitted again after every change.
-    void testStyle(const mc::Style &style);
+    // While testing, the band plays the edited style and the variation open
+    // in the editor (0 = main); testStyle() is emitted again after every change.
+    void testStyle(const mc::Style &style, int variation);
     void testStopped();
 
 protected:
@@ -157,6 +157,14 @@ private:
     void setModified(bool modified);
     void onMeterChanged();
     void onFillToggled(bool on);
+    void storePatterns(mc::Style &style) const; // the grids into the open variation
+    void showVariation(int index);
+    void chooseVariation(int index);
+    void addVariation();
+    void removeVariation();
+    void renameVariation();
+    void updateVariationCombo();
+    void ownPartToggled();
     bool confirmDiscard();
     void chooseStyle(int index);
     void newStyle();
@@ -171,6 +179,8 @@ private:
     bool m_modified = false;
     bool m_loading = false;
     int m_beats = 4, m_stepsPerBeat = 2, m_bars = 1; // meter of the patterns in the widgets
+    mc::Style m_patterns; // the patterns; those of the open variation are in the grids
+    int m_variation = 0;  // the open variation, 0 = main
 
     QComboBox *m_styleCombo = nullptr;
     QLineEdit *m_name = nullptr;
@@ -188,6 +198,12 @@ private:
     QSpinBox *m_bassVelocity = nullptr;
     QComboBox *m_padProgram = nullptr;
     QCheckBox *m_padDefault = nullptr;
+    QComboBox *m_variationCombo = nullptr;
+    QPushButton *m_removeVariation = nullptr;
+    QPushButton *m_renameVariation = nullptr;
+    QCheckBox *m_ownDrums = nullptr;
+    QCheckBox *m_ownBass = nullptr;
+    QCheckBox *m_ownComp = nullptr;
     DrumGrid *m_drums = nullptr;
     DrumGrid *m_fill = nullptr;
     QCheckBox *m_fillEnabled = nullptr;
