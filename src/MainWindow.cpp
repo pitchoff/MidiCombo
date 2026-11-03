@@ -196,7 +196,7 @@ void MainWindow::buildUi()
                "  /usr/share/sounds/sf2/FluidR3_GM.sf2</pre>"
                "<p>Then press <b>Refresh</b> and choose the synth as <b>Output</b>. "
                "A hardware synth or keyboard with GM sounds works as well.</p>"
-               "<p>Channels: 1 piano/comp, 2 bass, 3 pad, 4 MIDI thru, 10 drums.</p>"));
+               "<p>Channels: 1 piano/comp, 2 bass, 3 pad, 4 MIDI thru, 5 guitar, 10 drums.</p>"));
     });
     helpMenu->addAction(tr("&About"), this, [this] {
         QMessageBox::about(this, tr("About MidiCombo"),
