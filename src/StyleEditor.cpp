@@ -29,6 +29,7 @@
 #include <QSpinBox>
 #include <QStyle>
 #include <QTabWidget>
+#include <QTextBrowser>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -66,6 +67,132 @@ mc::Style defaultStyle(const QString &name)
 }
 
 } // namespace
+
+// ---------------------------------------------------------------- help
+
+void showStyleEditorHelp(QWidget *parent)
+{
+    const QString name = QStringLiteral("styleEditorHelp");
+    auto *dialog = parent->findChild<QDialog *>(name, Qt::FindDirectChildrenOnly);
+    if (!dialog) {
+        dialog = new QDialog(parent);
+        dialog->setObjectName(name);
+        dialog->setWindowFlag(Qt::Window);
+        dialog->setWindowTitle(QObject::tr("Style Editor Help"));
+        auto *layout = new QVBoxLayout(dialog);
+        auto *text = new QTextBrowser;
+        text->setOpenLinks(true);
+        text->setHtml(QObject::tr(R"html(
+<h2>Style Editor</h2>
+<p>The style editor creates new band styles and changes existing ones. It is a separate
+window, so the main window stays usable and the band can keep playing.
+Open it with <b>Window ▸ Style Editor…</b> (Ctrl+E).</p>
+
+<h3>The window</h3>
+<ul>
+<li><b>Edit</b> loads a built-in or loaded style. <b>New</b> starts from a simple rock beat,
+<b>Revert</b> discards the changes since the last load or apply. Unapplied changes show a
+<i>*</i> in the title, and you are asked before they are discarded.</li>
+<li><b>Style</b>: name, tempo, beats per bar, steps per beat (quarters, eighths, triplets,
+sixteenths, sextuplets or 12), number of bars, swing, and the crash cymbal on phrase starts.</li>
+<li><b>Instruments</b>: program and velocity of comp, bass and guitar, close or power chords
+for the comp, full, power or high chords for the guitar, and the pad sound and whether the pad
+is on by default.</li>
+<li><b>Pattern</b>: the main pattern or a variation, see <a href="#variations">Variations</a>.</li>
+<li><b>Groove</b> tab: the drum grid with the bass, comp and guitar tracks below it, step by
+step in line. Bars are marked by heavy lines and bold numbers.</li>
+<li><b>Fill</b> tab: a one-bar drum grid played on the last bar of every phrase.
+Switching it on starts it from the first bar of the groove.</li>
+</ul>
+
+<h3>Drum grid</h3>
+<p>One row per instrument, one column per step.</p>
+<table border="1" cellspacing="0" cellpadding="4">
+<tr><th>Action</th><th>Result</th></tr>
+<tr><td>Click an empty step</td><td>normal hit (<tt>x</tt>)</td></tr>
+<tr><td>Click a set step</td><td>rest (<tt>.</tt>)</td></tr>
+<tr><td>Shift-click</td><td>accent (<tt>X</tt>)</td></tr>
+<tr><td>Right-click</td><td>cycles normal, accent, soft, ghost (<tt>x X o g</tt>)</td></tr>
+<tr><td>Drag</td><td>paints the value of the first click</td></tr>
+<tr><td>Arrow keys, Home, End</td><td>move the cursor</td></tr>
+<tr><td><tt>x X o g</tt></td><td>set the step and move on</td></tr>
+<tr><td>Space / <tt>.</tt> or Del</td><td>toggle / clear the step</td></tr>
+<tr><td>Click an instrument name</td><td>change, move, clear or remove the row</td></tr>
+<tr><td>+ add drum…</td><td>adds a row: kit pieces, a percussion submenu, or any GM note</td></tr>
+</table>
+
+<h3>Bass, comp and guitar tracks</h3>
+<p>Each note is a bar that lasts until the next note or rest. Click a step and type a
+token; the cursor moves on as you type. <tt>-</tt> holds, <tt>.</tt>, Space or Del rest
+(deleting a note also removes its holds). Drag a note to change its length, double-click
+to add or remove a note, right-click for the list of tokens.</p>
+<table border="1" cellspacing="0" cellpadding="4">
+<tr><th>Track</th><th>Tokens</th></tr>
+<tr><td>Bass</td><td><tt>R</tt> root (or the bass note of a slash chord), <tt>3</tt> third,
+<tt>5</tt> fifth, <tt>6</tt> sixth, <tt>7</tt> seventh, <tt>8</tt> octave,
+<tt>A</tt> chromatic approach to the next chord</td></tr>
+<tr><td>Comp</td><td><tt>C</tt> full chord accented, <tt>c</tt> soft,
+<tt>1</tt>–<tt>9</tt> single chord tones from the lowest (arpeggios)</td></tr>
+<tr><td>Guitar</td><td><tt>D</tt>/<tt>d</tt> down strum loud/soft, <tt>U</tt>/<tt>u</tt> up
+strum on the top strings, <tt>X</tt>/<tt>x</tt> palm-muted chug on the low strings,
+<tt>1</tt>–<tt>6</tt> single strings from the lowest</td></tr>
+</table>
+<p>Guitar voicings: <b>Full chords</b> are six-string barre chords, <b>Power chords</b> root,
+fifth and octave, <b>High triads</b> small chords on the top strings for reggae and ska
+skanks or funk scratching.</p>
+
+<h3>Changing the meter</h3>
+<p>Steps that fall on the new grid are kept, and notes keep their length. New beats are
+rests, new bars repeat the existing ones. A coarser grid drops the steps in between;
+<b>Revert</b> brings them back.</p>
+
+<h3><a name="variations"></a>Variations</h3>
+<p>A variation is an alternative arrangement of the style, so the band doesn't repeat the
+same bars all song. In the main window, <b>Variation</b> changes them in turn or at random
+every few bars, or stays on one.</p>
+<ul>
+<li><b>Pattern</b> chooses what the grids show: the main pattern or a variation.</li>
+<li><b>Add Variation</b> copies the pattern shown, so you only change what should differ.
+<b>Rename…</b> and <b>Remove</b> act on the open variation.</li>
+<li>Switch off <b>Own drums</b>, <b>Own bass</b>, <b>Own comp</b> or <b>Own guitar</b> to let
+that part play the main pattern; the Fill tab has the same switch. Those parts are shown
+greyed out.</li>
+<li>Meter, tempo, swing, instruments and voicings are shared by all variations.</li>
+</ul>
+
+<h3>Trying and keeping a style</h3>
+<ul>
+<li><b>Test</b> (Ctrl+T) plays the edited style right away, with its tempo, swing and
+instruments, in the pattern open in the editor. Edits are heard from the next bar. The style
+list and the main window's settings don't change. Press Test again, Stop, or close the editor
+to go back; if Test started the band, it stops it too.</li>
+<li><b>Apply</b> (Ctrl+Return) puts the style into the style list and selects it. Apply it
+under a new name to make a copy; using the name of another style replaces it after asking.</li>
+<li><b>Save to File…</b> applies the style and writes it to a style file, which is loaded
+again on the next start. Other styles in that file are kept, but the file is rewritten, so
+XML comments are lost.</li>
+<li>Applied but unsaved styles, including changed built-in styles, last until you quit.</li>
+</ul>
+
+<h3>A typical session</h3>
+<ol>
+<li>Choose a style close to what you want under <b>Edit</b> and give it a new name.</li>
+<li>Press <b>Test</b> and play with the progression or your keyboard.</li>
+<li>Change the grid and tracks until it sounds right; add a variation for a chorus or bridge.</li>
+<li><b>Save to File…</b></li>
+</ol>
+<p>The file format is described in <tt>syntax.md</tt>.</p>
+)html"));
+        layout->addWidget(text);
+        auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close);
+        QObject::connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::hide);
+        layout->addWidget(buttons);
+        dialog->resize(720, 760);
+    }
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
+}
 
 // ---------------------------------------------------------------- StepGrid
 
@@ -855,6 +982,10 @@ StyleEditor::StyleEditor(QWidget *parent)
     layout->addWidget(help);
 
     auto *buttons = new QDialogButtonBox;
+    QPushButton *helpButton = buttons->addButton(QDialogButtonBox::Help);
+    helpButton->setShortcut(QKeySequence::HelpContents);
+    helpButton->setToolTip(tr("How to use the style editor (F1)"));
+    connect(helpButton, &QPushButton::clicked, this, [this] { showStyleEditorHelp(this); });
     m_testButton = buttons->addButton(tr("Test"), QDialogButtonBox::ActionRole);
     m_testButton->setCheckable(true);
     m_testButton->setIcon(QWidget::style()->standardIcon(QStyle::SP_MediaPlay));

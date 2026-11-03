@@ -186,6 +186,7 @@ void MainWindow::buildUi()
     QMenu *windowMenu = menuBar()->addMenu(tr("&Window"));
     windowMenu->addAction(tr("&Style Editor…"), QKeySequence(Qt::CTRL | Qt::Key_E), this, &MainWindow::showStyleEditor);
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
+    helpMenu->addAction(tr("Style &Editor Help…"), this, [this] { showStyleEditorHelp(this); });
     helpMenu->addAction(tr("&Sound Setup…"), this, [this] {
         QMessageBox::information(this, tr("Sound Setup"),
             tr("<p>MidiCombo sends MIDI to an ALSA sequencer port. To hear it you need a "
@@ -200,7 +201,7 @@ void MainWindow::buildUi()
     helpMenu->addAction(tr("&About"), this, [this] {
         QMessageBox::about(this, tr("About MidiCombo"),
             tr("<b>MidiCombo</b><br>A background band for practicing musicians.<br>"
-               "Qt %1 · ALSA sequencer").arg(QString::fromLatin1(qVersion())));
+               "Qt %1 · ALSA sequencer<br><br>(c) 2026 haleb").arg(QString::fromLatin1(qVersion())));
     });
 
     // Central area

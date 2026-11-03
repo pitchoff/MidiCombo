@@ -107,6 +107,8 @@ disable the control.
 **Window ▸ Style Editor…** (Ctrl+E) opens a separate window to change a
 style or create a new one, and to hear the result while you edit. The
 main window stays usable, so the band can keep playing.
+**Help** (F1) in the editor, or **Help ▸ Style Editor Help…** in the main
+window, opens this guide in a window of its own.
 
 The window, from top to bottom:
 

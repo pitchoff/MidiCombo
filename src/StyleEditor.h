@@ -123,6 +123,10 @@ private:
     std::string m_pressPattern;
 };
 
+// Shows the style editor guide in a separate, non-modal window (one per
+// parent, raised when already open).
+void showStyleEditorHelp(QWidget *parent);
+
 // Window to create and change band styles. "Apply" hands the style to the
 // main window, "Save to File" also writes it to a style file.
 class StyleEditor : public QDialog {
