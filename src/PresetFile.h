@@ -12,7 +12,7 @@ struct PresetData {
         int program = 0;
         int volume = 100;
     };
-    static constexpr int PartCount = 4; // same order as BandEngine::Part
+    static constexpr int PartCount = 5; // same order as BandEngine::Part
     static const char *const partKeys[PartCount];
 
     QString name;

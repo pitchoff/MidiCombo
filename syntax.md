@@ -139,7 +139,7 @@ file is rejected. Values outside the range are clamped.
 
 | Attribute | Values |
 |---|---|
-| `name` | `drums`, `bass`, `piano`, `pad`. Other names are ignored. |
+| `name` | `drums`, `bass`, `piano`, `pad`, `guitar`. Other names are ignored. |
 | `enabled` | `true` or `false` (anything other than `true` means off) |
 | `program` | GM program number counted from 0 (the user interface shows it counted from 1). For `drums`, a drum kit number ([5.3](#53-drum-kits)). Unknown numbers leave the instrument unchanged. |
 | `volume` | 0–127 (MIDI CC 7) |
@@ -224,6 +224,7 @@ instead of writing the XML by hand.
 | `<fill>` | `<row>` elements, exactly **one bar** long. Replaces the drums in the last bar of every phrase. | no fills |
 | `<bass>` | `program` 0–127 (default instrument), `velocity` 1–127, pattern as text | program 33, velocity 96, rests |
 | `<comp>` | `program` 0–127, `velocity` 1–127, `voicing` `close` or `power`, pattern as text | program 0, velocity 78, close, rests |
+| `<guitar>` | `program` 0–127, `velocity` 1–127, `voicing` `full`, `power` or `high`, pattern as text | program 25, velocity 80, full; no `<guitar>`: the guitar rests |
 | `<pad>` | `program` 0–127, `enabled` `true` if the pad should be on by default | program 48, off |
 | `<variation name="…">` | alternative patterns, any number, see [Variations](#variations) | none |
 
@@ -298,6 +299,33 @@ Voicings (`voicing` attribute of `<comp>`):
 If the chord changes while bass or comp notes are still sounding, they
 switch to the new chord straight away (arpeggio comps just stop).
 
+### Guitar pattern characters
+
+| Char | Plays | Velocity |
+|---|---|---|
+| `D` | down strum, all strings from the lowest | velocity + 8 |
+| `d` | down strum, soft | velocity − 15 |
+| `U` | up strum, the top four strings from the highest | velocity − 4 |
+| `u` | up strum, soft | velocity − 22 |
+| `X` | palm-muted chug: the lowest three strings, half a step long | velocity + 4 |
+| `x` | palm-muted chug, soft | velocity − 10 |
+| `1`–`9` | a single string: `1` is the lowest note of the voicing. Numbers above the voicing size continue an octave higher, and the notes ring two steps longer. | velocity |
+| `-` | lets the strings ring one more step | |
+| `.` | rest | |
+
+The strings of a strum follow each other by 7 ms (down) or 5 ms (up), and
+each string is a little softer than the one before.
+
+Voicings (`voicing` attribute of `<guitar>`):
+
+| Value | Notes |
+|---|---|
+| `full` | six-string barre chord with the root between E2 and D#3: root, fifth, octave (or the seventh or sixth of the chord), third, fifth, octave |
+| `power` | root, fifth and octave with the root between E2 and D#3 |
+| `high` | a three-note chord between C4 and E5, using the inversion closest to the previous chord, for off-beat skanks and funk scratching |
+
+A strummed chord switches to a new chord straight away, like the comp.
+
 ### Pad
 
 The pad plays the full chord (between G3 and A5) for as long as it lasts.
@@ -330,7 +358,7 @@ main pattern. Each is an alternative arrangement on the same grid:
 
 - `name` is required and must be unique within the style. `Main`,
   `in-turn` and `random` are reserved.
-- `<drums>`, `<fill>`, `<bass>` and `<comp>` are all optional. A part that
+- `<drums>`, `<fill>`, `<bass>`, `<comp>` and `<guitar>` are all optional. A part that
   is missing is taken from the main pattern, so a variation can change the
   bass alone. To silence a part, write rests, because an empty `<bass>` or
   `<drums>` also means "same as main".
@@ -357,10 +385,11 @@ element. Every control maps to one part of the syntax:
 | Swing, 8ths/16ths | `<swing amount unit>` |
 | Crash | `<crash drum>` (`none` or a crash, ride, splash or china cymbal) |
 | Comp program, velocity, Close/Power chords | `<comp program velocity voicing>` |
+| Guitar program, velocity, Full chords/Power chords/High triads | `<guitar program velocity voicing>` |
 | Bass program, velocity | `<bass program velocity>` |
 | Pad program, On by default | `<pad program enabled>` |
 | Groove tab, drum grid | `<drums>`, one `<row>` per grid row |
-| Groove tab, Bass and Comp tracks | the text of `<bass>` and `<comp>` |
+| Groove tab, Bass, Comp and Guitar tracks | the text of `<bass>`, `<comp>` and `<guitar>` |
 | Fill tab | `<fill>`; switched off = no `<fill>` element |
 
 The program lists show the GM names numbered from 1, as in most synth
@@ -395,7 +424,7 @@ because it plays nothing.
   to 16ths turns `R-5.` into `R---5-..`.
 - On a coarser grid, steps between the new steps are dropped: two beats
   of 16ths `X.x.x...` become `Xx` in quarters.
-- In bass and comp tracks, a new step inside a note becomes `-`, so notes
+- In bass, comp and guitar tracks, a new step inside a note becomes `-`, so notes
   keep their length. 8ths to triplets turns `R-5.` into `R--5-.`.
 - New beats are rests. New bars repeat the existing bars in order, and
   removed bars or beats are cut off.
@@ -403,7 +432,7 @@ because it plays nothing.
 The fill is always converted as one bar.
 
 **Variations.** **Pattern** chooses what the grids show. A variation
-writes one `<variation>` element, and Own drums, Own bass, Own comp and
+writes one `<variation>` element, and Own drums, Own bass, Own comp, Own guitar and
 "Use its own fill" decide whether that part is written. Switched off, the
 part is left out and is taken from the main pattern.
 
@@ -418,8 +447,9 @@ styles. Files written by the editor always look like this:
 
 - Every element is written, including `<crash>`, `<swing>` and `<pad>`,
   followed by the variations.
-  `<fill>` is left out when the fill is off, and `voicing="power"` is
-  written only for power chords.
+  `<fill>` is left out when the fill is off, `<guitar>` when the guitar
+  track has only rests, and the comp's `voicing="power"` is written only
+  for power chords. `<guitar>` always carries its `voicing`.
 - Drum rows use `drum="…"` when the note has a name in
   [5.1](#51-drum-names), otherwise `note="…"`. No crash is written as
   `drum="none"`.
@@ -502,4 +532,5 @@ Example style files in `examples/styles/`: `country.xml`, `latin.xml`,
 | 2 | bass |
 | 3 | pad |
 | 4 | MIDI thru (live mode) |
+| 5 | guitar |
 | 10 | drums |

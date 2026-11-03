@@ -17,6 +17,7 @@
         </drums>
         <bass program="32" velocity="98">R--. 5-5.</bass>
         <comp program="0" velocity="76"> C-.c C-.c</comp>
+        <guitar program="24" velocity="64" voicing="full">d.u. d.ud</guitar>
         <pad program="61" enabled="false"/>
 
         <!-- Syncopated piano montuno; the bass leaves the two-beat feel. -->
@@ -26,7 +27,7 @@
         </variation>
     </style>
 
-    <!-- Samba: surdo on the kick, shaker 16ths, syncopated guitar. -->
+    <!-- Samba: surdo on the kick, shaker 16ths, syncopated nylon guitar, a few piano chords. -->
     <style name="Samba">
         <meter beats="4" steps-per-beat="4"/>
         <tempo>100</tempo>
@@ -45,7 +46,8 @@
             <row drum="kick">      o..x X... o..x X...</row>
         </fill>
         <bass program="32" velocity="100">R--5 5--- R--5 5-A-</bass>
-        <comp program="24" velocity="74"> C.c. .C.c .C.. C.c.</comp>
+        <comp program="0" velocity="60"> .... ..c. .... ..c.</comp>
+        <guitar program="24" velocity="76" voicing="full">D.d. .D.d .D.. D.d.</guitar>
         <pad program="48" enabled="false"/>
 
         <!-- Busier side stick and guitar, bass reaches for the octave. -->
@@ -58,7 +60,7 @@
                 <row drum="low-agogo"> .... x.x. .... x...</row>
             </drums>
             <bass>R--5 8--5 R--5 5-A-</bass>
-            <comp>.C.c .C.. C.c. .C.c</comp>
+            <guitar>.D.d .D.. D.d. .D.d</guitar>
         </variation>
     </style>
 

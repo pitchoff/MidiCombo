@@ -96,6 +96,8 @@ mc::StyleVariation readVariation(QXmlStreamReader &xml)
             v.bass = xml.readElementText().toStdString();
         else if (name == QLatin1String("comp"))
             v.comp = xml.readElementText().toStdString();
+        else if (name == QLatin1String("guitar"))
+            v.guitar = xml.readElementText().toStdString();
         else
             xml.skipCurrentElement();
     }
@@ -147,6 +149,17 @@ mc::Style readStyle(QXmlStreamReader &xml)
             else if (!voicing.isEmpty() && voicing != QLatin1String("close"))
                 xml.raiseError(QStringLiteral("<comp voicing> must be \"close\" or \"power\""));
             s.comp = xml.readElementText().toStdString();
+        } else if (name == QLatin1String("guitar")) {
+            s.guitarProgram = intAttr(xml, "program", s.guitarProgram, 0, 127);
+            s.guitarVelocity = intAttr(xml, "velocity", s.guitarVelocity, 1, 127);
+            const auto voicing = xml.attributes().value(QLatin1String("voicing"));
+            if (voicing == QLatin1String("power"))
+                s.guitarVoicing = mc::GuitarVoicing::Power;
+            else if (voicing == QLatin1String("high"))
+                s.guitarVoicing = mc::GuitarVoicing::High;
+            else if (!voicing.isEmpty() && voicing != QLatin1String("full"))
+                xml.raiseError(QStringLiteral("<guitar voicing> must be \"full\", \"power\" or \"high\""));
+            s.guitar = xml.readElementText().toStdString();
         } else if (name == QLatin1String("pad")) {
             s.padProgram = intAttr(xml, "program", s.padProgram, 0, 127);
             s.padDefault = xml.attributes().value(QLatin1String("enabled")) == QLatin1String("true");
@@ -244,6 +257,16 @@ void writeStyle(QXmlStreamWriter &xml, const mc::Style &s)
     xml.writeCharacters(formatPattern(s.comp, s));
     xml.writeEndElement();
 
+    if (!s.guitar.empty()) {
+        static const char *const voicings[] = {"full", "power", "high"};
+        xml.writeStartElement("guitar");
+        xml.writeAttribute("program", QString::number(s.guitarProgram));
+        xml.writeAttribute("velocity", QString::number(s.guitarVelocity));
+        xml.writeAttribute("voicing", voicings[static_cast<int>(s.guitarVoicing)]);
+        xml.writeCharacters(formatPattern(s.guitar, s));
+        xml.writeEndElement();
+    }
+
     xml.writeEmptyElement("pad");
     xml.writeAttribute("program", QString::number(s.padProgram));
     xml.writeAttribute("enabled", s.padDefault ? "true" : "false");
@@ -259,6 +282,8 @@ void writeStyle(QXmlStreamWriter &xml, const mc::Style &s)
             xml.writeTextElement("bass", formatPattern(v.bass, s));
         if (!v.comp.empty())
             xml.writeTextElement("comp", formatPattern(v.comp, s));
+        if (!v.guitar.empty())
+            xml.writeTextElement("guitar", formatPattern(v.guitar, s));
         xml.writeEndElement();
     }
 

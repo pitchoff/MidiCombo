@@ -5,7 +5,7 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
-const char *const PresetData::partKeys[PresetData::PartCount] = {"drums", "bass", "piano", "pad"};
+const char *const PresetData::partKeys[PresetData::PartCount] = {"drums", "bass", "piano", "pad", "guitar"};
 
 namespace {
 

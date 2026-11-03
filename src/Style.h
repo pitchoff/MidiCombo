@@ -20,6 +20,14 @@ struct StyleVariation {
     std::vector<DrumRow> fill;
     std::string bass;
     std::string comp;
+    std::string guitar;
+};
+
+// How the guitar voices chords.
+enum class GuitarVoicing {
+    Full,  // six-string barre chord: root, fifth, octave or seventh, third, fifth, octave
+    Power, // root, fifth and octave
+    High,  // small triad on the top strings, for off-beat skanks
 };
 
 // A band style. All patterns use the same step grid (stepsPerBeat) and
@@ -30,6 +38,9 @@ struct StyleVariation {
 //   '-' hold the previous note, '.' rest.
 // Comp steps: 'C' chord accented, 'c' chord soft, '1'..'9' single chord
 //   tone (arpeggio, wraps into the next octave), '-' hold, '.' rest.
+// Guitar steps: 'D'/'d' down strum accented/soft, 'U'/'u' up strum (top
+//   strings), 'X'/'x' palm-muted chug (low strings, short), '1'..'9' single
+//   string from the lowest, '-' hold, '.' rest. An empty guitar pattern rests.
 struct Style {
     std::string name;
     int beatsPerBar = 4;
@@ -45,10 +56,14 @@ struct Style {
     std::string bass;
     std::string comp;
     bool powerChords = false; // comp plays root, fifth and octave in guitar range
+    std::string guitar;
+    GuitarVoicing guitarVoicing = GuitarVoicing::Full;
 
     int pianoProgram = 0;
     int bassProgram = 33;
     int padProgram = 48;
+    int guitarProgram = 25;
+    int guitarVelocity = 80;
     bool padDefault = false;
     int bassVelocity = 96;
     int compVelocity = 78;
@@ -64,6 +79,7 @@ struct Style {
     const std::vector<DrumRow> &fillOf(int variation) const;
     const std::string &bassOf(int variation) const;
     const std::string &compOf(int variation) const;
+    const std::string &guitarOf(int variation) const;
 };
 
 // How the band chooses a variation.

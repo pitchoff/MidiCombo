@@ -53,7 +53,9 @@ std::vector<Style> makeStyles()
                 {Snare, "..X. ..X."},
                 {Kick,  "X..x X.x."},
             },
-            {}, "R-R5 8-5A", "C-c- C-c-"}};
+            {}, "R-R5 8-5A", "C-c- C-c-", "D-d- D-du"}};
+        s.guitar = "D-du -udu";
+        s.guitarProgram = 27; // clean electric guitar
         styles.push_back(s);
     }
     {
@@ -87,7 +89,10 @@ std::vector<Style> makeStyles()
                 {SideStick, ".... x... .... x..."},
                 {Kick,      "X... ..x. X... ...."},
             },
-            {}, "R--- ---5 8--- --A-", "1-3- 5-3- 2-4- 5-4-"}};
+            {}, "R--- ---5 8--- --A-", "1-3- 5-3- 2-4- 5-4-", "d--- --u- d--- u-u-"}};
+        s.guitar = "d--- ---- d--- --u-";
+        s.guitarProgram = 25; // steel-string acoustic
+        s.guitarVelocity = 66;
         styles.push_back(s);
     }
     {
@@ -114,7 +119,10 @@ std::vector<Style> makeStyles()
         s.padProgram = 49;
         s.bassVelocity = 100;
         s.compVelocity = 72;
-        s.variations = {{"B", {}, {}, "R-5- 3-A- | R-7- 5-A-", "..C- .c.. | C-.. .c-."}};
+        s.variations = {{"B", {}, {}, "R-5- 3-A- | R-7- 5-A-", "..C- .c.. | C-.. .c-.", ""}};
+        s.guitar = "d.d. d.d. | d.d. d.d.";
+        s.guitarProgram = 26; // jazz guitar
+        s.guitarVelocity = 62;
         styles.push_back(s);
     }
     {
@@ -129,8 +137,11 @@ std::vector<Style> makeStyles()
             {Kick,      "o..o o..o | o..o o..o"},
         };
         s.bass = "R--5 5--R | R--5 5--R";
-        s.comp = "C-.C -.C. | .C-. C-..";
-        s.pianoProgram = 24; // nylon guitar
+        s.comp = "c--- ---- | .... ..c-";
+        s.guitar = "d-.D -.d. | .D-. d-..";
+        s.guitarProgram = 24; // nylon guitar
+        s.guitarVelocity = 76;
+        s.pianoProgram = 0;
         s.bassProgram = 32;
         s.padProgram = 48;
         s.compVelocity = 74;
@@ -140,7 +151,7 @@ std::vector<Style> makeStyles()
                 {ClosedHat, "xoxo xoxo | xoxo xoxo"},
                 {Kick,      "o..o o..o | o..o o..o"},
             },
-            {}, "", ".C-. C-.C | -.C- .C.."}};
+            {}, "", "", ".D-. d-.D | -.d- .D.."}};
         styles.push_back(s);
     }
     {
@@ -174,7 +185,11 @@ std::vector<Style> makeStyles()
                 {Snare,     ".... X..g .g.. X..g"},
                 {Kick,      "X..x ..x. ..X. .x.."},
             },
-            {}, "R.8. .R.5 ..R. 7-A.", ".C.. ..C. c..C ..c."}};
+            {}, "R.8. .R.5 ..R. 7-A.", ".C.. ..C. c..C ..c.", ".X.x X.x. .X.x X.xX"}};
+        s.guitar = "x.Xx .xX. x.Xx .xX.";
+        s.guitarVoicing = GuitarVoicing::High;
+        s.guitarProgram = 27;
+        s.guitarVelocity = 78;
         styles.push_back(s);
     }
     {
@@ -199,7 +214,10 @@ std::vector<Style> makeStyles()
         s.pianoProgram = 0;
         s.bassProgram = 32;
         s.padProgram = 48;
-        s.variations = {{"B", {}, {}, "R--- 5- | 3--- 5-", "C-.. C- | ..C- C-"}};
+        s.variations = {{"B", {}, {}, "R--- 5- | 3--- 5-", "C-.. C- | ..C- C-", ""}};
+        s.guitar = "1-3- 5- | 1-3- 6-";
+        s.guitarProgram = 24;
+        s.guitarVelocity = 66;
         styles.push_back(s);
     }
     {
@@ -220,11 +238,15 @@ std::vector<Style> makeStyles()
         };
         s.bass = "R--R 5-..";
         s.comp = ".c.c .c.c";
-        s.pianoProgram = 27; // clean electric guitar
+        s.guitar = ".D.d .D.d";
+        s.guitarVoicing = GuitarVoicing::High;
+        s.guitarProgram = 27; // clean electric guitar
+        s.guitarVelocity = 84;
+        s.pianoProgram = 16;  // drawbar organ doubling the skank
         s.bassProgram = 33;
-        s.padProgram = 16;   // drawbar organ
-        s.compVelocity = 82;
-        s.variations = {{"B", {}, {}, "R--. 5-3-", ".c.c .ccc"}};
+        s.padProgram = 48;
+        s.compVelocity = 64;
+        s.variations = {{"B", {}, {}, "R--. 5-3-", ".c.c .ccc", ".D.d .DdD"}};
         styles.push_back(s);
     }
     {
@@ -247,7 +269,11 @@ std::vector<Style> makeStyles()
         s.pianoProgram = 0;
         s.bassProgram = 33;
         s.padProgram = 16;
-        s.variations = {{"B", {}, {}, "R-8 7-6 5-6 7-A", "c.C ..c ..C ..c"}};
+        s.variations = {{"B", {}, {}, "R-8 7-6 5-6 7-A", "c.C ..c ..C ..c", "D.. ..d D.. ..d"}};
+        s.guitar = "X.x X.x X.x X.x";
+        s.guitarVoicing = GuitarVoicing::Power;
+        s.guitarProgram = 29; // overdriven guitar
+        s.guitarVelocity = 82;
         styles.push_back(s);
     }
 
@@ -273,7 +299,9 @@ Style normalizedStyle(Style s)
             r.steps = strip(r.steps);
         v.bass = strip(v.bass);
         v.comp = strip(v.comp);
+        v.guitar = strip(v.guitar);
     }
+    s.guitar = strip(s.guitar);
     return s;
 }
 
@@ -307,6 +335,14 @@ const std::string &Style::compOf(int variation) const
         && !variations[variation - 1].comp.empty())
         return variations[variation - 1].comp;
     return comp;
+}
+
+const std::string &Style::guitarOf(int variation) const
+{
+    if (variation > 0 && variation <= static_cast<int>(variations.size())
+        && !variations[variation - 1].guitar.empty())
+        return variations[variation - 1].guitar;
+    return guitar;
 }
 
 int nextVariation(VariationMode mode, int current, int count, unsigned random)
@@ -352,6 +388,8 @@ bool validateStyle(const Style &s, std::string &error)
         return fail(length("bass pattern", s.bass.size(), steps));
     if (static_cast<int>(s.comp.size()) != steps)
         return fail(length("comp pattern", s.comp.size(), steps));
+    if (!s.guitar.empty() && static_cast<int>(s.guitar.size()) != steps)
+        return fail(length("guitar pattern", s.guitar.size(), steps));
     for (size_t i = 0; i < s.variations.size(); ++i) {
         const StyleVariation &v = s.variations[i];
         const std::string where = "variation '" + v.name + "': ";
@@ -370,6 +408,8 @@ bool validateStyle(const Style &s, std::string &error)
             return fail(where + length("bass pattern", v.bass.size(), steps));
         if (!v.comp.empty() && static_cast<int>(v.comp.size()) != steps)
             return fail(where + length("comp pattern", v.comp.size(), steps));
+        if (!v.guitar.empty() && static_cast<int>(v.guitar.size()) != steps)
+            return fail(where + length("guitar pattern", v.guitar.size(), steps));
     }
     return true;
 }
@@ -420,6 +460,8 @@ Style resizedStyle(const Style &style, int beatsPerBar, int stepsPerBeat, int ba
         r.steps = resizePattern(r.steps, style, beatsPerBar, stepsPerBeat, 1, 1, false);
     s.bass = resizePattern(style.bass, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
     s.comp = resizePattern(style.comp, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
+    if (!style.guitar.empty())
+        s.guitar = resizePattern(style.guitar, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
     for (auto &v : s.variations) {
         for (auto &r : v.drums)
             r.steps = resizePattern(r.steps, style, beatsPerBar, stepsPerBeat, style.bars, bars, false);
@@ -429,6 +471,8 @@ Style resizedStyle(const Style &style, int beatsPerBar, int stepsPerBeat, int ba
             v.bass = resizePattern(v.bass, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
         if (!v.comp.empty())
             v.comp = resizePattern(v.comp, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
+        if (!v.guitar.empty())
+            v.guitar = resizePattern(v.guitar, style, beatsPerBar, stepsPerBeat, style.bars, bars, true);
     }
     return s;
 }

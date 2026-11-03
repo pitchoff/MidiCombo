@@ -1,6 +1,6 @@
 # MidiCombo
 
-A background band for musicians on Linux: drums, bass, piano/comp and pad,
+A background band for musicians on Linux: drums, bass, piano/comp, guitar and pad,
 played through the ALSA sequencer. Qt 6 user interface.
 
 ## Modes
@@ -62,9 +62,30 @@ Pop Rock, Ballad, Swing Jazz, Bossa Nova, Funk, Waltz (3/4), Reggae,
 Shuffle Blues. They are defined as step patterns in `src/Style.cpp`.
 More styles come from style files or the style editor.
 
+### Guitar
+
+The guitar is a band part of its own, next to piano/comp, with its own
+instrument and pattern, and it strums: the strings of a chord follow each
+other by a few milliseconds, low to high on a down strum and high to low on
+an up strum. A guitar pattern uses `D`/`d` for loud/soft down strums,
+`U`/`u` for up strums on the top strings, `X`/`x` for short palm-muted
+chugs on the low strings, and `1`–`6` for single strings. Every style
+chooses one of three voicings:
+
+- **full**: six-string barre chords, for strumming
+- **power**: root, fifth and octave, for distorted rock and metal guitars
+- **high**: small chords on the top strings, for reggae and ska skanks and
+  funk scratching
+
+All built-in and example styles have a guitar part. Where the comp used to
+be a guitar (Bossa Nova, Reggae, country, samba, folk, rock, metal and the
+Jamaican styles), the guitar now plays that pattern, and the comp has keys:
+piano, honky-tonk piano or organ. A style file without `<guitar>` leaves the
+guitar silent.
+
 ### Variations
 
-A style can have variations: alternative drum, bass and comp patterns, so
+A style can have variations: alternative drum, bass, comp and guitar patterns, so
 the band doesn't repeat the same bars for the whole song. All built-in
 styles have a variation **B**, and every example style has a named one,
 such as **Walking**, **Montuno**, **Breakdown**, **Half-Time** or **Chorus**.
@@ -102,9 +123,9 @@ The window, from top to bottom:
 - **Pattern** chooses what the grids show: the main pattern or a variation.
   **Add Variation** copies the pattern shown, so you only change what
   should differ. **Rename…** and **Remove** act on the open variation.
-  Switch off **Own drums**, **Own bass** or **Own comp** to let that part
+  Switch off **Own drums**, **Own bass**, **Own comp** or **Own guitar** to let that part
   play the main pattern; the Fill tab has the same switch.
-- **Groove** tab: the drum grid with the bass and comp tracks below it,
+- **Groove** tab: the drum grid with the bass, comp and guitar tracks below it,
   step by step in line. Bars are marked by heavy lines and bold numbers.
 - **Fill** tab: a one-bar drum grid played on the last bar of each phrase.
   Switching it on starts it from the first bar of the groove.
@@ -120,7 +141,8 @@ Editing the patterns:
   note).
 - **Bass** and **comp** are tracks: each note is a bar that lasts until
   the next note or rest. Click a step and type a token (bass
-  `R 3 5 6 7 8 A`, comp `C c 1`–`9`), `-` to hold, `.` or Del for a rest;
+  `R 3 5 6 7 8 A`, comp `C c 1`–`9`, guitar `D d U u X x 1`–`6`), `-` to
+  hold, `.` or Del for a rest;
   the cursor moves on as you type. Drag a note to change its length,
   double-click to add or remove a note, right-click for the list of tokens.
 - Changing the meter keeps the steps that fit the new grid, notes keep
@@ -163,7 +185,8 @@ name as an existing one replaces it, so built-in styles can be overridden.
 
 `examples/styles/` contains Country Two-Step, Country Train Beat, Cha-Cha,
 Samba, 12/8 Slow Blues, 6/8 Folk, Disco, Hard Rock, Heavy Metal, Heavy Metal
-(Double Bass) and Symphonic Rock (installed to `share/midicombo/styles`).
+(Double Bass), Symphonic Rock, and the Jamaican styles Mento, Ska,
+Rocksteady and Rockers (installed to `share/midicombo/styles`).
 
 ```xml
 <midicombo-styles version="1">
@@ -210,7 +233,7 @@ Samba, 12/8 Slow Blues, 6/8 Folk, Disco, Hard Rock, Heavy Metal, Heavy Metal
 ## Build
 
 ```
-sudo apt install cmake g++ qt6-base-dev libasound2-dev
+sudo apt install cmake g++ qt6-base-dev libasound2-dev pkg-config
 cmake -S . -B build
 cmake --build build -j
 ctest --test-dir build      # chord parser/detector tests
@@ -234,7 +257,7 @@ fluidsynth -a pipewire -m alsa_seq -is /usr/share/sounds/sf2/FluidR3_GM.sf2
 then choose it as **Output** in the app (press **Refresh** if it is not listed).
 The app selects FluidSynth/TiMidity automatically on the first start.
 
-MIDI channels: 1 piano/comp, 2 bass, 3 pad, 4 MIDI thru, 10 drums.
+MIDI channels: 1 piano/comp, 2 bass, 3 pad, 4 MIDI thru, 5 guitar, 10 drums.
 
 ## Source layout
 

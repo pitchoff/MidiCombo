@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Jamaican styles for MidiCombo, roughly in historical order: mento (1950s),
+  ska (early 1960s), rocksteady (1966-68) and rockers reggae (1970s).
+  See country.xml for the pattern characters.
+
+  From ska on, the guitar and piano "skank" sits on the off-beats, so these
+  patterns rest on the beats. The guitar uses voicing="high": small chords
+  on the top strings. Mento, rocksteady and rockers are slow
+  in feel; set the tempo for the quarter note.
+-->
+<midicombo-styles version="1">
+
+    <!--
+      Mento: Jamaican folk music played on banjo, guitar, rumba box (a big
+      thumb piano, played here by the acoustic bass) and hand drums.
+      Bass on 1 and the "and" of 2, maracas in eighths, a 3-2 clave.
+    -->
+    <style name="Mento">
+        <meter beats="4" steps-per-beat="2" bars="2"/>
+        <tempo>116</tempo>
+        <swing amount="25" unit="8"/>
+        <crash drum="none"/>
+        <drums>
+            <row drum="shaker">    XoXo XoXo | XoXo XoXo</row>
+            <row drum="claves">    x..x ..x. | ..x. x...</row>
+            <row drum="high-bongo">..x. ..x. | ..x. .xx.</row>
+            <row drum="low-conga"> x... x..x | x... x...</row>
+        </drums>
+        <fill>
+            <row drum="shaker">    XoXo ....</row>
+            <row drum="high-bongo">..x. xx..</row>
+            <row drum="high-conga">.... ..xx</row>
+            <row drum="low-conga"> x... ...X</row>
+        </fill>
+        <bass program="32" velocity="96">R..5 R-.. | R..5 5-A-</bass>
+        <comp program="105" velocity="78">c.Cc .cC. | c.Cc .cC.</comp>
+        <guitar program="25" velocity="66" voicing="full">d.u. d.u. | d.u. d.ud</guitar>
+        <pad program="21" enabled="false"/>
+
+        <!-- The banjo picks the chord tones, the bass walks up to the octave. -->
+        <variation name="Picking">
+            <bass>R-5- 8-5- | R-3- 5-A-</bass>
+            <comp>1232 3432 | 1232 343.</comp>
+        </variation>
+    </style>
+
+    <!--
+      Ska: fast, with the guitar skank on every off-beat, a walking bass and
+      a light swing. A horn section fits as the pad.
+    -->
+    <style name="Ska">
+        <meter beats="4" steps-per-beat="2" bars="2"/>
+        <tempo>160</tempo>
+        <swing amount="35" unit="8"/>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="closed-hat">.x.x .x.x | .x.x .x.x</row>
+            <row drum="snare">     ..X. ..X. | ..X. ..X.</row>
+            <row drum="kick">      X... X... | X... X...</row>
+        </drums>
+        <fill>
+            <row drum="snare">    ..X. xxXX</row>
+            <row drum="floor-tom">.... ...X</row>
+            <row drum="kick">     X... X...</row>
+        </fill>
+        <bass program="32" velocity="98">R-3- 5-6- | 8-6- 5-A-</bass>
+        <comp program="0" velocity="66">.c.c .c.c | .c.c .c.c</comp>
+        <guitar program="27" velocity="86" voicing="high">.D.D .D.D | .D.D .D.D</guitar>
+        <pad program="61" enabled="false"/>
+
+        <!-- Ride instead of the hi-hat, open hat on 4, the bass walks down. -->
+        <variation name="Ride">
+            <drums>
+                <row drum="ride">    x.x. x.x. | x.x. x.x.</row>
+                <row drum="open-hat">.... ...x | .... ...x</row>
+                <row drum="snare">   ..X. ..X. | ..X. ..X.</row>
+                <row drum="kick">    X... X... | X... X...</row>
+            </drums>
+            <bass>R-8- 7-6- | 5-3- 5-A-</bass>
+            <guitar>.D.d .D.d | .D.d .D.D</guitar>
+        </variation>
+    </style>
+
+    <!--
+      Rocksteady: ska slowed down. The bass gets more room and plays broken,
+      melodic lines; guitar and piano skank on the off-beats of the eighths.
+    -->
+    <style name="Rocksteady">
+        <meter beats="4" steps-per-beat="4"/>
+        <tempo>80</tempo>
+        <swing amount="20" unit="16"/>
+        <crash drum="none"/>
+        <drums>
+            <row drum="closed-hat">x.o. x.o. x.o. x.o.</row>
+            <row drum="side-stick">.... X... .... X...</row>
+            <row drum="kick">      X... .... X... ....</row>
+        </drums>
+        <fill>
+            <row drum="closed-hat">x.o. x.o. .... ....</row>
+            <row drum="snare">     .... X... x.x. XxXX</row>
+            <row drum="kick">      X... .... X... ....</row>
+        </fill>
+        <bass program="33" velocity="102">R-.. .R5. 8-.. 5.3.</bass>
+        <comp program="0" velocity="58">.... ..c. .... ..c.</comp>
+        <guitar program="27" velocity="78" voicing="high">..d. ..D. ..d. ..D.</guitar>
+        <pad program="16" enabled="false"/>
+
+        <!-- Towards the one drop: kick and rim only on 3, a busier bass line. -->
+        <variation name="One Drop">
+            <drums>
+                <row drum="closed-hat">x.o. x.o. x.o. x.o.</row>
+                <row drum="side-stick">.... .... X... ....</row>
+                <row drum="kick">      .... .... X... ....</row>
+            </drums>
+            <bass>R-.. 5.R. ..8. 5-A-</bass>
+        </variation>
+    </style>
+
+    <!--
+      Rockers: 1970s reggae drumming with sixteenth hi-hats, open hats on the
+      off-beats and the rimshot on 3. Guitar skank on 2 and 4, the organ
+      plays the off-beats.
+    -->
+    <style name="Rockers">
+        <meter beats="4" steps-per-beat="4"/>
+        <tempo>76</tempo>
+        <swing amount="15" unit="16"/>
+        <crash drum="none"/>
+        <drums>
+            <row drum="closed-hat">xoxo xoxo xoxo xoxo</row>
+            <row drum="open-hat">  .... ..x. .... ..x.</row>
+            <row drum="side-stick">.... .... X... ....</row>
+            <row drum="kick">      X... .... X... ..x.</row>
+        </drums>
+        <fill>
+            <row drum="closed-hat">xoxo xoxo .... ....</row>
+            <row drum="high-tom">  .... .... xx.. ....</row>
+            <row drum="mid-tom">   .... .... ..xx ....</row>
+            <row drum="floor-tom"> .... .... .... x.X.</row>
+            <row drum="kick">      X... .... X... ....</row>
+        </fill>
+        <bass program="33" velocity="106">R-.R ..5. R-.. 8.5A</bass>
+        <comp program="16" velocity="56">..c. ..c. ..c. ..c.</comp>
+        <guitar program="27" velocity="82" voicing="high">.... D-.. .... D-..</guitar>
+        <pad program="48" enabled="false"/>
+
+        <!-- Steppers: kick on every beat, snare on 2 and 4, a pushing bass. -->
+        <variation name="Steppers">
+            <drums>
+                <row drum="closed-hat">xoxo xoxo xoxo xoxo</row>
+                <row drum="open-hat">  .... ..x. .... ..x.</row>
+                <row drum="snare">     .... X... .... X...</row>
+                <row drum="kick">      X... X... X... X...</row>
+            </drums>
+            <bass>R.R. 5.R. R.R. 8.5A</bass>
+            <guitar>..d. ..D. ..d. ..D.</guitar>
+        </variation>
+    </style>
+
+</midicombo-styles>

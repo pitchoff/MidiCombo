@@ -36,7 +36,7 @@
 
 namespace {
 
-const char *const kPartNames[BandEngine::PartCount] = {"Drums", "Bass", "Piano / Comp", "Pad"};
+const char *const kPartNames[BandEngine::PartCount] = {"Drums", "Bass", "Piano / Comp", "Pad", "Guitar"};
 
 struct DrumKit {
     const char *name;
@@ -523,6 +523,7 @@ void MainWindow::applyStyleDefaults(const mc::Style &s)
     m_parts[BandEngine::Bass].program->setCurrentIndex(s.bassProgram);
     m_parts[BandEngine::Pad].program->setCurrentIndex(s.padProgram);
     m_parts[BandEngine::Pad].enabled->setChecked(s.padDefault);
+    m_parts[BandEngine::Guitar].program->setCurrentIndex(s.guitarProgram);
 }
 
 const mc::Style &MainWindow::currentStyle() const
@@ -1008,6 +1009,8 @@ void MainWindow::sendPart(BandEngine::Part part)
         program = m_testStyle.bassProgram;
     else if (m_testing && part == BandEngine::Pad)
         program = m_testStyle.padProgram;
+    else if (m_testing && part == BandEngine::Guitar)
+        program = m_testStyle.guitarProgram;
     m_midi->programChange(ch, program);
     m_midi->controlChange(ch, 7, pc.volume->value());
     m_midi->controlChange(ch, 91, 40); // a little reverb

@@ -2,8 +2,8 @@
 <!--
   Symphonic rock for MidiCombo. See country.xml for the pattern characters.
 
-  The comp part plays power chords (voicing="power": root, fifth and
-  octave in a low guitar register) on a distorted guitar. Chords sound
+  The guitar part plays power chords (voicing="power": root, fifth and
+  octave in a low register) on a distorted guitar; the piano plays arpeggios. Chords sound
   best written as plain triads or power chords (E, A5, Dm); the third is
   left out anyway.
 -->
@@ -29,7 +29,8 @@
             <row drum="kick">     X... X...</row>
         </fill>
         <bass program="34" velocity="100">R-R- R-R- | R-R- 5-A-</bass>
-        <comp program="29" velocity="88" voicing="power">C--- ---- | C--- --C-</comp>
+        <comp program="0" velocity="68">1-3- 5-3- | 1-3- 5-3-</comp>
+        <guitar program="29" velocity="88" voicing="power">D--- ---- | D--- --D-</guitar>
         <pad program="48" enabled="true"/>
 
         <!-- Full-time drums and a rhythmic guitar under the strings. -->
@@ -40,7 +41,7 @@
                 <row drum="kick"> X... X.x. | X... X.x.</row>
             </drums>
             <bass>R-5- 8-5- | R-5- 5-A-</bass>
-            <comp>C--C --C- | C--C --C-</comp>
+            <guitar>D--D --D- | D--D --D-</guitar>
         </variation>
     </style>
 

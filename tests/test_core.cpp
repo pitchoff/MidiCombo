@@ -85,8 +85,10 @@ int main()
             styleFound |= s.name == preset.style;
         check(styleFound, std::string("preset style exists: ") + preset.style);
     }
-    for (const auto &s : mc::builtinStyles())
+    for (const auto &s : mc::builtinStyles()) {
         check(mc::validateStyle(s, err), err);
+        check(s.guitar.size() == static_cast<size_t>(s.stepCount()), "built-in style has a guitar: " + s.name);
+    }
 
     // Resizing a style keeps steps that fall on the new grid.
     mc::Style st;
@@ -110,11 +112,12 @@ int main()
                                                                               + triplet.drums[0].steps);
 
     // Variations: empty parts come from the main pattern.
-    st.variations = {{"B", {}, {}, "R5-.", ""}};
+    st.variations = {{"B", {}, {}, "R5-.", "", "D-u."}};
     check(mc::validateStyle(st, err), "variation valid: " + err);
     check(st.bassOf(1) == "R5-." && st.compOf(1) == st.comp && st.drumsOf(1)[0].steps == st.drums[0].steps
               && st.fillOf(1)[0].steps == st.fill[0].steps && st.bassOf(0) == st.bass && st.bassOf(5) == st.bass,
           "variation parts fall back to main");
+    check(st.guitarOf(1) == "D-u." && st.guitarOf(0).empty(), "variation guitar");
     mc::Style resized = mc::resizedStyle(st, 2, 4, 1);
     check(resized.variations[0].bass == "R-5---..", "variation bass is resized: " + resized.variations[0].bass);
     check(resized.variations[0].comp.empty() && resized.variations[0].drums.empty(), "main parts stay inherited");

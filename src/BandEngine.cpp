@@ -123,6 +123,7 @@ int BandEngine::channel(Part part)
     case Bass: return 1;
     case Piano: return 0;
     case Pad: return 2;
+    case Guitar: return 4;
     default: return 15;
     }
 }
@@ -137,6 +138,7 @@ BandEngine::BandEngine(MidiEngine *midi, QObject *parent)
     m_enabled[Bass] = true;
     m_enabled[Piano] = true;
     m_enabled[Pad] = false;
+    m_enabled[Guitar] = true;
 }
 
 BandEngine::~BandEngine()
@@ -195,6 +197,8 @@ void BandEngine::run(bool countIn)
     m_tChord = {};
     m_tCompVoicing.clear();
     m_tPadVoicing.clear();
+    m_tGuitarVoicing.clear();
+    m_tPending.clear();
     m_tLastBass = -1;
     m_tVariation = 0;
     m_tVariationName.clear();
@@ -211,8 +215,10 @@ void BandEngine::run(bool countIn)
             m_tStyle = m_style;
             m_tProgression = m_progression;
         }
-        if (m_tStyle != previousStyle && m_tChord.isValid())
+        if (m_tStyle != previousStyle && m_tChord.isValid()) {
             voiceComp(); // the new style may voice chords differently
+            voiceGuitar();
+        }
         if (bar >= 0)
             updateVariation(bar);
         const int beats = m_tStyle->beatsPerBar;
@@ -221,7 +227,8 @@ void BandEngine::run(bool countIn)
             const double swing = m_swing.load();
             for (int t = 0; t < TicksPerBeat && m_running; ++t) {
                 const double offset = beatSeconds * swingWarp(t, swing, m_tStyle->swingUnit);
-                std::this_thread::sleep_until(beatStart + duration_cast<steady_clock::duration>(duration<double>(offset)));
+                m_tTickTime = beatStart + duration_cast<steady_clock::duration>(duration<double>(offset));
+                waitUntil(m_tTickTime);
                 if (!m_running)
                     break;
                 if (t == 0)
@@ -237,6 +244,7 @@ void BandEngine::run(bool countIn)
         ++bar;
     }
 
+    m_tPending.clear();
     for (const auto &n : m_tActive)
         m_midi->noteOff(channel(n.part), n.note);
     m_tActive.clear();
@@ -264,6 +272,22 @@ void BandEngine::updateVariation(int bar)
         m_tVariationName = name;
         emit variationChanged(QString::fromStdString(name));
     }
+}
+
+// Sleeps until `time`, sounding the strummed strings that fall before it.
+void BandEngine::waitUntil(steady_clock::time_point time)
+{
+    while (m_running) {
+        auto next = std::min_element(m_tPending.begin(), m_tPending.end(),
+                                     [](const PendingNote &a, const PendingNote &b) { return a.time < b.time; });
+        if (next == m_tPending.end() || next->time >= time)
+            break;
+        const PendingNote n = *next;
+        m_tPending.erase(next);
+        std::this_thread::sleep_until(n.time);
+        playNote(Guitar, n.note, n.velocity, n.offTick);
+    }
+    std::this_thread::sleep_until(time);
 }
 
 void BandEngine::countInTick(int beat, int tick)
@@ -306,6 +330,7 @@ void BandEngine::processTick(int bar, int beat, int tick)
         m_tChord = chord;
         if (chord.isValid()) {
             voiceComp();
+            voiceGuitar();
             m_tPadVoicing = voiceChord(chord, m_tPadVoicing, 55, 81);
         }
         emit chordChanged(QString::fromStdString(chord.name()));
@@ -323,6 +348,8 @@ void BandEngine::processTick(int bar, int beat, int tick)
                 hit[Bass] = playBassStep(patternStep, bar, barTick, stepTicks, stepInBar == 0);
             if (m_enabled[Piano])
                 hit[Piano] = playCompStep(patternStep, stepTicks);
+            if (m_enabled[Guitar])
+                hit[Guitar] = playGuitarStep(patternStep, stepTicks);
         }
     }
 
@@ -330,6 +357,7 @@ void BandEngine::processTick(int bar, int beat, int tick)
         stopPart(Bass);
         stopPart(Piano);
         stopPart(Pad);
+        stopPart(Guitar);
         return;
     }
 
@@ -339,7 +367,11 @@ void BandEngine::processTick(int bar, int beat, int tick)
             retrigger(Bass);
         if (!hit[Piano])
             retrigger(Piano);
+        if (!hit[Guitar])
+            retrigger(Guitar);
     }
+    if (!m_enabled[Guitar] && isSounding(Guitar))
+        stopPart(Guitar);
     if (m_enabled[Pad]) {
         if (changed || !isSounding(Pad))
             startPad();
@@ -442,6 +474,87 @@ bool BandEngine::playCompStep(int patternStep, int stepTicks)
     return false;
 }
 
+// Guitar chord shapes start on the low E string (E2 .. D#3).
+void BandEngine::voiceGuitar()
+{
+    const mc::Chord &ch = m_tChord;
+    const int root = 40 + (ch.root - 4 + 12) % 12;
+    switch (m_tStyle->guitarVoicing) {
+    case mc::GuitarVoicing::Power:
+        m_tGuitarVoicing = {root, root + ch.fifth(), root + 12};
+        break;
+    case mc::GuitarVoicing::High:
+        m_tGuitarVoicing = voiceChord(ch, m_tGuitarVoicing, 60, 76);
+        m_tGuitarVoicing.resize(std::min<size_t>(3, m_tGuitarVoicing.size()));
+        break;
+    case mc::GuitarVoicing::Full: {
+        // Barre chord shape: a real seventh (or sixth) replaces the middle octave.
+        int middle = 12;
+        for (int iv : ch.intervals())
+            if (iv == 9 || iv == 10 || iv == 11)
+                middle = iv;
+        m_tGuitarVoicing = {root, root + ch.fifth(), root + middle, root + 12 + ch.third(), root + 12 + ch.fifth(),
+                            root + 24};
+        break;
+    }
+    }
+}
+
+// Down strums go from the lowest string up, up strums from the highest
+// down; the strings follow each other by a few milliseconds.
+void BandEngine::strum(const std::vector<int> &notes, bool up, int velocity, long long offTick)
+{
+    stopPart(Guitar);
+    const auto spread = milliseconds(up ? 5 : 7);
+    for (size_t i = 0; i < notes.size(); ++i) {
+        const int note = up ? notes[notes.size() - 1 - i] : notes[i];
+        const int v = humanize(velocity - static_cast<int>(i) * 2);
+        if (i == 0)
+            playNote(Guitar, note, v, offTick);
+        else
+            m_tPending.push_back({m_tTickTime + spread * static_cast<int>(i), note, v, offTick});
+    }
+}
+
+bool BandEngine::playGuitarStep(int patternStep, int stepTicks)
+{
+    const mc::Style &s = *m_tStyle;
+    const std::string &g = s.guitarOf(m_tVariation);
+    if (patternStep >= static_cast<int>(g.size()) || m_tGuitarVoicing.empty())
+        return false;
+    const char c = g[patternStep];
+    const int len = holdSteps(g, patternStep);
+    const long long off = m_tAbsTick + std::max(1, len * stepTicks - 1);
+    const std::vector<int> &v = m_tGuitarVoicing;
+    switch (c) {
+    case 'D': strum(v, false, s.guitarVelocity + 8, off); return true;
+    case 'd': strum(v, false, s.guitarVelocity - 15, off); return true;
+    case 'U':
+    case 'u': {
+        // Up strums only catch the top strings.
+        const std::vector<int> top(v.end() - std::min<std::ptrdiff_t>(4, v.size()), v.end());
+        strum(top, true, s.guitarVelocity - (c == 'U' ? 4 : 22), off);
+        return true;
+    }
+    case 'X':
+    case 'x': {
+        // Palm mute: the low strings, short.
+        const std::vector<int> low(v.begin(), v.begin() + std::min<std::ptrdiff_t>(3, v.size()));
+        strum(low, false, s.guitarVelocity + (c == 'X' ? 4 : -10), m_tAbsTick + std::max(1, stepTicks / 2));
+        return true;
+    }
+    default:
+        if (c >= '1' && c <= '9') {
+            const int idx = c - '1';
+            const int size = static_cast<int>(v.size());
+            const int note = v[idx % size] + 12 * (idx / size);
+            playNote(Guitar, note, humanize(s.guitarVelocity), m_tAbsTick + (len + 2) * stepTicks);
+            return true;
+        }
+        return false;
+    }
+}
+
 void BandEngine::retrigger(Part part)
 {
     long long off = -1;
@@ -462,6 +575,8 @@ void BandEngine::retrigger(Part part)
     } else if (part == Piano && s.compOf(m_tVariation).find_first_of("123456789") == std::string::npos) {
         for (int n : m_tCompVoicing)
             playNote(Piano, n, humanize(s.compVelocity - 15), off);
+    } else if (part == Guitar && s.guitarOf(m_tVariation).find_first_of("123456789") == std::string::npos) {
+        strum(m_tGuitarVoicing, false, s.guitarVelocity - 20, off);
     }
 }
 
@@ -490,6 +605,8 @@ void BandEngine::playNote(Part part, int note, int velocity, long long offTick)
 
 void BandEngine::stopPart(Part part)
 {
+    if (part == Guitar)
+        m_tPending.clear();
     auto it = m_tActive.begin();
     while (it != m_tActive.end()) {
         if (it->part == part) {

@@ -204,11 +204,16 @@ private:
     QCheckBox *m_ownDrums = nullptr;
     QCheckBox *m_ownBass = nullptr;
     QCheckBox *m_ownComp = nullptr;
+    QCheckBox *m_ownGuitar = nullptr;
+    QComboBox *m_guitarProgram = nullptr;
+    QSpinBox *m_guitarVelocity = nullptr;
+    QComboBox *m_guitarVoicing = nullptr;
     DrumGrid *m_drums = nullptr;
     DrumGrid *m_fill = nullptr;
     QCheckBox *m_fillEnabled = nullptr;
     StepTrack *m_bass = nullptr;
     StepTrack *m_comp = nullptr;
+    StepTrack *m_guitar = nullptr;
     QPushButton *m_testButton = nullptr;
     QTimer *m_testTimer = nullptr; // collects quick edits into one update
 };

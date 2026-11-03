@@ -724,6 +724,16 @@ StyleEditor::StyleEditor(QWidget *parent)
     m_bassVelocity = new QSpinBox;
     m_bassVelocity->setRange(1, 127);
     m_bassVelocity->setPrefix(tr("velocity "));
+    m_guitarProgram = programCombo();
+    m_guitarVelocity = new QSpinBox;
+    m_guitarVelocity->setRange(1, 127);
+    m_guitarVelocity->setPrefix(tr("velocity "));
+    m_guitarVoicing = new QComboBox;
+    m_guitarVoicing->addItem(tr("Full chords"));
+    m_guitarVoicing->addItem(tr("Power chords"));
+    m_guitarVoicing->addItem(tr("High triads"));
+    m_guitarVoicing->setToolTip(tr("Full: six-string barre chords. Power: root, fifth and octave. "
+                                   "High: small chords on the top strings, for off-beat skanks."));
     m_padProgram = programCombo();
     m_padDefault = new QCheckBox(tr("On by default"));
     ig->addWidget(new QLabel(tr("Comp:")), 0, 0);
@@ -733,9 +743,13 @@ StyleEditor::StyleEditor(QWidget *parent)
     ig->addWidget(new QLabel(tr("Bass:")), 1, 0);
     ig->addWidget(m_bassProgram, 1, 1);
     ig->addWidget(m_bassVelocity, 1, 2);
-    ig->addWidget(new QLabel(tr("Pad:")), 2, 0);
-    ig->addWidget(m_padProgram, 2, 1);
-    ig->addWidget(m_padDefault, 2, 2);
+    ig->addWidget(new QLabel(tr("Guitar:")), 2, 0);
+    ig->addWidget(m_guitarProgram, 2, 1);
+    ig->addWidget(m_guitarVelocity, 2, 2);
+    ig->addWidget(m_guitarVoicing, 2, 3);
+    ig->addWidget(new QLabel(tr("Pad:")), 3, 0);
+    ig->addWidget(m_padProgram, 3, 1);
+    ig->addWidget(m_padDefault, 3, 2);
     ig->setColumnStretch(1, 1);
     layout->addWidget(instruments);
 
@@ -760,7 +774,8 @@ StyleEditor::StyleEditor(QWidget *parent)
     m_ownDrums = new QCheckBox(tr("Own drums"));
     m_ownBass = new QCheckBox(tr("Own bass"));
     m_ownComp = new QCheckBox(tr("Own comp"));
-    for (QCheckBox *own : {m_ownDrums, m_ownBass, m_ownComp}) {
+    m_ownGuitar = new QCheckBox(tr("Own guitar"));
+    for (QCheckBox *own : {m_ownDrums, m_ownBass, m_ownComp, m_ownGuitar}) {
         own->setToolTip(tr("Off: this part plays the main pattern"));
         connect(own, &QCheckBox::toggled, this, &StyleEditor::ownPartToggled);
         variations->addWidget(own);
@@ -798,10 +813,23 @@ StyleEditor::StyleEditor(QWidget *parent)
                                         {'7', tr("Chord tone 7")},
                                         {'8', tr("Chord tone 8")},
                                         {'9', tr("Chord tone 9")}});
+    m_guitar = new StepTrack(tr("Guitar"), {{'D', tr("Down strum, accented")},
+                                            {'d', tr("Down strum, soft")},
+                                            {'U', tr("Up strum (top strings)")},
+                                            {'u', tr("Up strum, soft")},
+                                            {'X', tr("Palm-muted chug, accented")},
+                                            {'x', tr("Palm-muted chug")},
+                                            {'1', tr("String 1 (lowest)")},
+                                            {'2', tr("String 2")},
+                                            {'3', tr("String 3")},
+                                            {'4', tr("String 4")},
+                                            {'5', tr("String 5")},
+                                            {'6', tr("String 6")}});
     gl->addWidget(m_drums);
     gl->addSpacing(8);
     gl->addWidget(m_bass);
     gl->addWidget(m_comp);
+    gl->addWidget(m_guitar);
     gl->addStretch();
     tabs->addTab(scrolled(groove), tr("Groove"));
 
@@ -818,7 +846,7 @@ StyleEditor::StyleEditor(QWidget *parent)
     auto *help = new QLabel(
         tr("<b>Drums:</b> click to set or clear a step, shift-click for an accent, right-click to change the "
            "velocity (accent, normal, soft, ghost), drag to paint. Click an instrument name to change it.<br>"
-           "<b>Tracks:</b> click a step and type a token (bass: R 3 5 6 7 8 A, comp: C c 1–9), <i>-</i> holds, "
+           "<b>Tracks:</b> click a step and type a token (bass: R 3 5 6 7 8 A, comp: C c 1–9, guitar: D d U u X x 1–6), <i>-</i> holds, "
            "<i>.</i> or Del rests. Drag a note to change its length, double-click to add or remove a note, "
            "right-click for all tokens.<br>"
            "<b>Variations:</b> Pattern chooses what the grids show. Parts without \"Own\" play the main pattern."));
@@ -865,12 +893,13 @@ StyleEditor::StyleEditor(QWidget *parent)
             setModified(true);
     };
     connect(m_name, &QLineEdit::textEdited, this, modified);
-    for (QSpinBox *spin : {m_tempo, m_swing, m_compVelocity, m_bassVelocity})
+    for (QSpinBox *spin : {m_tempo, m_swing, m_compVelocity, m_bassVelocity, m_guitarVelocity})
         connect(spin, &QSpinBox::valueChanged, this, modified);
-    for (QComboBox *combo : {m_swingUnit, m_crash, m_compProgram, m_voicing, m_bassProgram, m_padProgram})
+    for (QComboBox *combo : {m_swingUnit, m_crash, m_compProgram, m_voicing, m_bassProgram, m_padProgram,
+                             m_guitarProgram, m_guitarVoicing})
         connect(combo, &QComboBox::currentIndexChanged, this, modified);
     connect(m_padDefault, &QCheckBox::toggled, this, modified);
-    for (StepGrid *g : std::initializer_list<StepGrid *>{m_drums, m_fill, m_bass, m_comp})
+    for (StepGrid *g : std::initializer_list<StepGrid *>{m_drums, m_fill, m_bass, m_comp, m_guitar})
         connect(g, &StepGrid::changed, this, modified);
     connect(m_beatsSpin, &QSpinBox::valueChanged, this, &StyleEditor::onMeterChanged);
     connect(m_barsSpin, &QSpinBox::valueChanged, this, &StyleEditor::onMeterChanged);
@@ -935,12 +964,15 @@ void StyleEditor::load(const mc::Style &style)
     m_compProgram->setCurrentIndex(s.pianoProgram);
     m_compVelocity->setValue(s.compVelocity);
     m_voicing->setCurrentIndex(s.powerChords ? 1 : 0);
+    m_guitarProgram->setCurrentIndex(s.guitarProgram);
+    m_guitarVelocity->setValue(s.guitarVelocity);
+    m_guitarVoicing->setCurrentIndex(static_cast<int>(s.guitarVoicing));
     m_bassProgram->setCurrentIndex(s.bassProgram);
     m_bassVelocity->setValue(s.bassVelocity);
     m_padProgram->setCurrentIndex(s.padProgram);
     m_padDefault->setChecked(s.padDefault);
 
-    for (StepGrid *g : std::initializer_list<StepGrid *>{m_drums, m_bass, m_comp})
+    for (StepGrid *g : std::initializer_list<StepGrid *>{m_drums, m_bass, m_comp, m_guitar})
         g->setMeter(s.beatsPerBar, s.stepsPerBeat, s.stepCount());
     m_fill->setMeter(s.beatsPerBar, s.stepsPerBeat, s.stepsPerBar());
     m_patterns = s;
@@ -970,6 +1002,7 @@ mc::Style StyleEditor::style() const
     s.fill = m_patterns.fill;
     s.bass = m_patterns.bass;
     s.comp = m_patterns.comp;
+    s.guitar = m_patterns.guitar;
     s.variations = m_patterns.variations;
     storePatterns(s);
     s.powerChords = m_voicing->currentIndex() == 1;
@@ -979,6 +1012,9 @@ mc::Style StyleEditor::style() const
     s.padDefault = m_padDefault->isChecked();
     s.bassVelocity = m_bassVelocity->value();
     s.compVelocity = m_compVelocity->value();
+    s.guitarProgram = m_guitarProgram->currentIndex();
+    s.guitarVelocity = m_guitarVelocity->value();
+    s.guitarVoicing = static_cast<mc::GuitarVoicing>(m_guitarVoicing->currentIndex());
     return s;
 }
 
@@ -992,6 +1028,9 @@ void StyleEditor::storePatterns(mc::Style &s) const
             s.fill = m_fill->rows();
         s.bass = m_bass->pattern();
         s.comp = m_comp->pattern();
+        s.guitar = m_guitar->pattern();
+        if (s.guitar.find_first_not_of('.') == std::string::npos)
+            s.guitar.clear(); // no guitar
         return;
     }
     mc::StyleVariation &v = s.variations[m_variation - 1];
@@ -999,6 +1038,7 @@ void StyleEditor::storePatterns(mc::Style &s) const
     v.fill.clear();
     v.bass.clear();
     v.comp.clear();
+    v.guitar.clear();
     if (m_ownDrums->isChecked())
         v.drums = m_drums->rows();
     if (m_fillEnabled->isChecked())
@@ -1007,6 +1047,8 @@ void StyleEditor::storePatterns(mc::Style &s) const
         v.bass = m_bass->pattern();
     if (m_ownComp->isChecked())
         v.comp = m_comp->pattern();
+    if (m_ownGuitar->isChecked())
+        v.guitar = m_guitar->pattern();
 }
 
 // Puts a variation into the grids. Parts it shares with the main pattern
@@ -1021,14 +1063,17 @@ void StyleEditor::showVariation(int index)
     const bool ownFill = v ? !v->fill.empty() : !m_patterns.fill.empty();
     const bool ownBass = !v || !v->bass.empty();
     const bool ownComp = !v || !v->comp.empty();
+    const bool ownGuitar = !v || !v->guitar.empty();
 
     m_drums->setRows(m_patterns.drumsOf(index));
     m_fill->setRows(m_patterns.fillOf(index));
     m_bass->setPattern(m_patterns.bassOf(index));
     m_comp->setPattern(m_patterns.compOf(index));
+    m_guitar->setPattern(m_patterns.guitarOf(index));
     m_ownDrums->setChecked(ownDrums);
     m_ownBass->setChecked(ownBass);
     m_ownComp->setChecked(ownComp);
+    m_ownGuitar->setChecked(ownGuitar);
     m_fillEnabled->setChecked(ownFill);
     m_fillEnabled->setText(index > 0 ? tr("Use its own fill (off: the main pattern's fill)")
                                      : tr("Play a fill on the last bar of every phrase"));
@@ -1036,7 +1081,8 @@ void StyleEditor::showVariation(int index)
     m_fill->setEnabled(ownFill);
     m_bass->setEnabled(ownBass);
     m_comp->setEnabled(ownComp);
-    for (QCheckBox *own : {m_ownDrums, m_ownBass, m_ownComp})
+    m_guitar->setEnabled(ownGuitar);
+    for (QCheckBox *own : {m_ownDrums, m_ownBass, m_ownComp, m_ownGuitar})
         own->setVisible(index > 0);
     m_removeVariation->setEnabled(index > 0);
     m_renameVariation->setEnabled(index > 0);
@@ -1081,7 +1127,8 @@ void StyleEditor::addVariation()
         return;
     const int shown = m_variation;
     m_patterns.variations.push_back({name.toStdString(), m_patterns.drumsOf(shown), m_patterns.fillOf(shown),
-                                     m_patterns.bassOf(shown), m_patterns.compOf(shown)});
+                                     m_patterns.bassOf(shown), m_patterns.compOf(shown),
+                                     m_patterns.guitarOf(shown)});
     updateVariationCombo();
     showVariation(static_cast<int>(m_patterns.variations.size()));
     setModified(true);
@@ -1131,12 +1178,15 @@ void StyleEditor::ownPartToggled()
     m_drums->setEnabled(m_ownDrums->isChecked());
     m_bass->setEnabled(m_ownBass->isChecked());
     m_comp->setEnabled(m_ownComp->isChecked());
+    m_guitar->setEnabled(m_ownGuitar->isChecked());
     if (!m_ownDrums->isChecked())
         m_drums->setRows(m_patterns.drums);
     if (!m_ownBass->isChecked())
         m_bass->setPattern(m_patterns.bass);
     if (!m_ownComp->isChecked())
         m_comp->setPattern(m_patterns.comp);
+    if (!m_ownGuitar->isChecked())
+        m_guitar->setPattern(m_patterns.guitar);
     setModified(true);
 }
 
@@ -1154,7 +1204,7 @@ void StyleEditor::onMeterChanged()
     m_stepsPerBeat = resized.stepsPerBeat;
     m_bars = resized.bars;
     m_patterns = resized;
-    for (StepGrid *g : std::initializer_list<StepGrid *>{m_drums, m_bass, m_comp})
+    for (StepGrid *g : std::initializer_list<StepGrid *>{m_drums, m_bass, m_comp, m_guitar})
         g->setMeter(m_beats, m_stepsPerBeat, resized.stepCount());
     m_fill->setMeter(m_beats, m_stepsPerBeat, resized.stepsPerBar());
     showVariation(m_variation);

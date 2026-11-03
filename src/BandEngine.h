@@ -8,6 +8,7 @@
 #include <QString>
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <random>
@@ -24,7 +25,7 @@ enum class ChordMode { Progression, Live };
 class BandEngine : public QObject {
     Q_OBJECT
 public:
-    enum Part { Drums, Bass, Piano, Pad, PartCount };
+    enum Part { Drums, Bass, Piano, Pad, Guitar, PartCount };
     static constexpr int TicksPerBeat = 12;
     static constexpr int ThruChannel = 3;
     static int channel(Part part);
@@ -53,6 +54,13 @@ signals:
     void variationChanged(const QString &name); // empty when the band stops
 
 private:
+    // A strummed string that sounds a few milliseconds after the tick.
+    struct PendingNote {
+        std::chrono::steady_clock::time_point time;
+        int note;
+        int velocity;
+        long long offTick;
+    };
     struct ActiveNote {
         Part part;
         int note;
@@ -69,6 +77,10 @@ private:
     void playDrums(int bar, int stepInBar, int patternStep, int stepTicks);
     bool playBassStep(int patternStep, int bar, int barTick, int stepTicks, bool downbeat);
     bool playCompStep(int patternStep, int stepTicks);
+    bool playGuitarStep(int patternStep, int stepTicks);
+    void strum(const std::vector<int> &notes, bool up, int velocity, long long offTick);
+    void voiceGuitar();
+    void waitUntil(std::chrono::steady_clock::time_point time);
     int bassNote(char token, int bar, int nextTick);
     void voiceComp();
     void retrigger(Part part);
@@ -104,6 +116,9 @@ private:
     mc::Chord m_tChord;
     std::vector<int> m_tCompVoicing;
     std::vector<int> m_tPadVoicing;
+    std::vector<int> m_tGuitarVoicing;
+    std::vector<PendingNote> m_tPending; // guitar strings still to sound
+    std::chrono::steady_clock::time_point m_tTickTime;
     int m_tLastBass = -1;
     int m_tVariation = 0;
     std::string m_tVariationName;

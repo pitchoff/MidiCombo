@@ -120,8 +120,10 @@ int main()
         std::vector<mc::Style> loaded;
         check(readStyleFile(QStringLiteral(EXAMPLES_DIR "/styles/") + name, loaded, error),
               name.toStdString() + ": " + error.toStdString());
-        for (const auto &style : loaded)
+        for (const auto &style : loaded) {
             check(!style.variations.empty(), "example has a variation: " + style.name);
+            check(style.guitar.find_first_not_of('.') != std::string::npos, "example has a guitar: " + style.name);
+        }
             all.insert(all.end(), loaded.begin(), loaded.end());
     }
     all.back().crashNote = 0;
@@ -139,7 +141,9 @@ int main()
                     && a.swingUnit == b.swingUnit && a.crashNote == b.crashNote && a.bass == b.bass && a.comp == b.comp
                     && a.powerChords == b.powerChords && a.pianoProgram == b.pianoProgram
                     && a.bassProgram == b.bassProgram && a.padProgram == b.padProgram && a.padDefault == b.padDefault
-                    && a.bassVelocity == b.bassVelocity && a.compVelocity == b.compVelocity
+                    && a.bassVelocity == b.bassVelocity && a.compVelocity == b.compVelocity && a.guitar == b.guitar
+                    && a.guitarProgram == b.guitarProgram && a.guitarVelocity == b.guitarVelocity
+                    && a.guitarVoicing == b.guitarVoicing
                     && a.drums.size() == b.drums.size() && a.fill.size() == b.fill.size();
         for (size_t r = 0; same && r < a.drums.size(); ++r)
             same = a.drums[r].note == b.drums[r].note && a.drums[r].steps == b.drums[r].steps;
@@ -148,7 +152,8 @@ int main()
         same = same && a.variations.size() == b.variations.size();
         for (size_t v = 0; same && v < a.variations.size(); ++v) {
             const mc::StyleVariation &x = a.variations[v], &y = b.variations[v];
-            same = x.name == y.name && x.bass == y.bass && x.comp == y.comp && x.drums.size() == y.drums.size()
+            same = x.name == y.name && x.bass == y.bass && x.comp == y.comp && x.guitar == y.guitar
+                   && x.drums.size() == y.drums.size()
                    && x.fill.size() == y.fill.size();
             for (size_t r = 0; same && r < x.drums.size(); ++r)
                 same = x.drums[r].note == y.drums[r].note && x.drums[r].steps == y.drums[r].steps;
@@ -159,6 +164,13 @@ int main()
     }
     check(drumName(38) == QLatin1String("snare") && drumNote(QStringLiteral("kick")) == 36 && drumName(90).isEmpty(),
           "drum name lookup");
+
+    // A style without <guitar> loads with a silent guitar; bad voicings are rejected.
+    const QString noGuitar = writeText(dir, QStringLiteral("noguitar.xml"), styleFile("<bass>R-5-R-5-</bass>"));
+    check(readStyleFile(noGuitar, styles, error) && styles[0].guitar.empty(), "missing guitar rests");
+    check(fails(dir, styleFile("<guitar voicing=\"jazz\">DDDDDDDD</guitar>"), "unknown guitar voicing"),
+          "unknown guitar voicing is rejected");
+    check(fails(dir, styleFile("<guitar>DD</guitar>"), "guitar length"), "guitar length is checked");
 
     if (failures == 0)
         std::cout << "All style tests passed\n";

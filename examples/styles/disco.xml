@@ -2,7 +2,7 @@
 <!-- Disco for MidiCombo. See country.xml for the pattern characters. -->
 <midicombo-styles version="1">
 
-    <!-- Four on the floor, open hi-hat on the off-beats, octave bass, strings. -->
+    <!-- Four on the floor, open hi-hat on the off-beats, octave bass, scratching guitar, strings. -->
     <style name="Disco">
         <meter beats="4" steps-per-beat="4"/>
         <tempo>118</tempo>
@@ -20,6 +20,7 @@
         </fill>
         <bass program="38" velocity="100">R.8. R.8. R.8. R.8A</bass>
         <comp program="4" velocity="74">  .... ..C. .... ..C.</comp>
+        <guitar program="27" velocity="74" voicing="high">x.x. X.x. x.x. X.x.</guitar>
         <pad program="48" enabled="true"/>
 
         <!-- Thinner drums without tambourine, syncopated bass and keys. -->
@@ -31,6 +32,7 @@
             </drums>
             <bass>R..8 .8R. R..8 .5A.</bass>
             <comp>.C.. ..C. .C.. C.c.</comp>
+            <guitar>.X.. .X.. .X.. .X.x</guitar>
         </variation>
     </style>
 

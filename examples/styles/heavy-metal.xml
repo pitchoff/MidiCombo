@@ -2,8 +2,8 @@
 <!--
   Heavy metal styles for MidiCombo. See country.xml for the pattern characters.
 
-  The comp part plays power chords (voicing="power": root, fifth and
-  octave in a low guitar register) on a distorted guitar. Chords sound
+  The guitar part plays power chords (voicing="power": root, fifth and
+  octave in a low register) on a distorted guitar; the piano rests. Chords sound
   best written as plain triads or power chords (E, A5, Dm); the third is
   left out anyway.
 -->
@@ -27,7 +27,8 @@
             <row drum="kick">     X... X... X... X...</row>
         </fill>
         <bass program="34" velocity="108">R-RR R-RR R-RR R-RR</bass>
-        <comp program="30" velocity="96" voicing="power">C-cc C-cc C-cc C-cc</comp>
+        <comp program="0" velocity="60">.... .... .... ....</comp>
+        <guitar program="30" velocity="96" voicing="power">X.xx X.xx X.xx X.xx</guitar>
         <pad program="48" enabled="false"/>
 
         <!-- Drops the gallop for a stop-and-go riff with the snare on 3. -->
@@ -38,7 +39,7 @@
                 <row drum="kick"> X..x X..x .x.x ....</row>
             </drums>
             <bass>R-R- R-R- R-R- 5-A-</bass>
-            <comp>C--- c-c- C--- C-C-</comp>
+            <guitar>D--- x.x. D--- D-D-</guitar>
         </variation>
     </style>
 
@@ -60,7 +61,8 @@
             <row drum="kick">     Xxxx xxxx Xxxx xxxx</row>
         </fill>
         <bass program="34" velocity="106">R-R- R-R- R-R- R-R-</bass>
-        <comp program="30" velocity="96" voicing="power">C--- C-c- C--- C-cc</comp>
+        <comp program="0" velocity="60">.... .... .... ....</comp>
+        <guitar program="30" velocity="96" voicing="power">D--- D-x. D--- D-xx</guitar>
         <pad program="48" enabled="false"/>
 
         <!-- Half-time snare and long chords over the double bass. -->
@@ -71,7 +73,7 @@
                 <row drum="kick"> Xxxx Xxxx Xxxx Xxxx</row>
             </drums>
             <bass>R--- R-R- R--- 5-A-</bass>
-            <comp>C--- ---- C--- C-C-</comp>
+            <guitar>D--- ---- D--- D-D-</guitar>
         </variation>
     </style>
 

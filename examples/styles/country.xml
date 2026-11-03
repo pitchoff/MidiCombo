@@ -7,11 +7,13 @@
     bass:  R root, 3 third, 5 fifth, 6 sixth, 7 seventh, 8 octave,
            A chromatic approach to the next chord, - hold, . rest
     comp:  C chord accented, c chord soft, 1-9 single chord tone, - hold, . rest
+    guitar: D/d down strum loud/soft, U/u up strum, X/x palm-muted chug,
+           1-9 single string from the lowest, - hold, . rest
   Spaces and | are only for readability.
 -->
 <midicombo-styles version="1">
 
-    <!-- Boom-chick: alternating root/fifth bass, guitar on 2 and 4. -->
+    <!-- Boom-chick: alternating root/fifth bass, guitar on 2 and 4, honky-tonk piano licks. -->
     <style name="Country Two-Step">
         <meter beats="4" steps-per-beat="2" bars="2"/>
         <tempo>160</tempo>
@@ -27,13 +29,14 @@
             <row drum="kick">     X... X...</row>
         </fill>
         <bass program="33" velocity="100">R-.. 5-.. | R-.. 5-A-</bass>
-        <comp program="25" velocity="80"> ..C. ..C. | ..C. ..C.</comp>
+        <comp program="3" velocity="66">  .... ..c. | .... .cc.</comp>
+        <guitar program="25" velocity="82" voicing="full">..D. ..D. | ..D. ..du</guitar>
         <pad program="22" enabled="false"/>
 
         <!-- Walking bass between the chords, guitar push before 4. -->
         <variation name="Walking">
             <bass>R-3- 5-6- | 8-6- 5-A-</bass>
-            <comp>..C. .cC. | ..C. .cC.</comp>
+            <guitar>..D. .dD. | ..D. .dD.</guitar>
         </variation>
     </style>
 
@@ -52,7 +55,8 @@
             <row drum="kick">     X... .... X... ....</row>
         </fill>
         <bass program="32" velocity="96">R--- .... 5--- ....</bass>
-        <comp program="25" velocity="76">.... C-.. .... C-..</comp>
+        <comp program="3" velocity="62">.... .... .... ..c.</comp>
+        <guitar program="25" velocity="78" voicing="full">.... D-.. .... D-du</guitar>
         <pad program="22" enabled="false"/>
 
         <!-- Looser: kick pickups, bass and guitar answering each other. -->
@@ -62,7 +66,7 @@
                 <row drum="kick"> X... ..x. X... ..x.</row>
             </drums>
             <bass>R-.. 5-.. R-.. 5-A-</bass>
-            <comp>.... C-.c .... C-.c</comp>
+            <guitar>.... D-.u .... D-.u</guitar>
         </variation>
     </style>
 

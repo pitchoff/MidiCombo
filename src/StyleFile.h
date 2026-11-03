@@ -25,6 +25,8 @@
 //     <bass program="32" velocity="96">R-.. 5-.. | R-.. 5-A-</bass>
 //     <comp program="25" velocity="78">..C- ..C- | ..C- ..C-</comp>
 //                                           <!-- voicing="power": root, fifth, octave -->
+//     <guitar program="25" velocity="80" voicing="full">D-du D-du | D-du D-du</guitar>
+//                                           <!-- voicing: full, power or high; missing = guitar rests -->
 //     <pad program="22" enabled="false"/>
 //     <variation name="B">                  <!-- any number; a missing part is taken from the main pattern -->
 //       <bass>R-5- R-5- | R-5- 5-A-</bass>
