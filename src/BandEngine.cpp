@@ -3,6 +3,7 @@
 #include "MidiEngine.h"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <climits>
 #include <cmath>
@@ -183,11 +184,12 @@ void BandEngine::setLiveChord(const mc::Chord &chord)
     m_liveChord = chord;
 }
 
-void BandEngine::setVariationPlan(mc::VariationMode mode, int fixed, int everyBars)
+void BandEngine::setVariationPlan(mc::VariationMode mode, int fixed, int everyBars, bool followProgression)
 {
     m_variationMode = mode;
     m_variationFixed = fixed;
     m_variationEvery = everyBars;
+    m_variationFromProgression = followProgression;
 }
 
 void BandEngine::run(bool countIn)
@@ -253,13 +255,39 @@ void BandEngine::run(bool countIn)
     emit variationChanged(QString());
 }
 
+// The variation a progression marker asks for in this bar, matched by name
+// without regard to case.
+int BandEngine::progressionVariation(int bar) const
+{
+    if (m_mode != ChordMode::Progression || !m_variationFromProgression || !m_tProgression)
+        return -1;
+    const std::string &name = m_tProgression->variationAt(bar);
+    if (name.empty())
+        return -1;
+    auto same = [](const std::string &a, const std::string &b) {
+        return a.size() == b.size()
+            && std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) {
+                   return std::tolower(static_cast<unsigned char>(x)) == std::tolower(static_cast<unsigned char>(y));
+               });
+    };
+    if (same(name, "Main"))
+        return 0;
+    const auto &vars = m_tStyle->variations;
+    for (size_t i = 0; i < vars.size(); ++i)
+        if (same(name, vars[i].name))
+            return static_cast<int>(i) + 1;
+    return -1;
+}
+
 // Called at every bar start. A style change may leave fewer variations.
 void BandEngine::updateVariation(int bar)
 {
     const mc::Style &s = *m_tStyle;
     const int count = s.variationCount();
     const mc::VariationMode mode = m_variationMode;
-    if (mode == mc::VariationMode::Fixed) {
+    if (const int marked = progressionVariation(bar); marked >= 0) {
+        m_tVariation = marked;
+    } else if (mode == mc::VariationMode::Fixed) {
         m_tVariation = std::clamp(m_variationFixed.load(), 0, count - 1);
     } else {
         if (m_tVariation >= count)

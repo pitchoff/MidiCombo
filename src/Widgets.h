@@ -6,7 +6,8 @@
 #include <QStringList>
 #include <QWidget>
 
-// Grid of bars showing the chord progression, with the playing bar highlighted.
+// Grid of bars showing the chord progression, with the playing bar
+// highlighted. A bar where a variation marker takes effect shows its name.
 class ProgressionView : public QWidget {
     Q_OBJECT
 public:
@@ -23,6 +24,7 @@ private:
     static constexpr int BarsPerRow = 4;
     static constexpr int RowHeight = 44;
     QStringList m_labels;
+    QStringList m_variations; // per bar, empty where nothing changes
     int m_current = -1;
 };
 

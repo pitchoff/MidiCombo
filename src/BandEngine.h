@@ -45,7 +45,9 @@ public:
     void setLiveChord(const mc::Chord &chord);
     void setPartEnabled(Part part, bool enabled) { m_enabled[part] = enabled; }
     // Takes effect at the next bar. `fixed` is used in VariationMode::Fixed.
-    void setVariationPlan(mc::VariationMode mode, int fixed, int everyBars);
+    // Bars with a variation marker in the progression play that variation
+    // instead, unless `followProgression` is false.
+    void setVariationPlan(mc::VariationMode mode, int fixed, int everyBars, bool followProgression = true);
 
 signals:
     // Emitted from the band thread; connect with queued connections.
@@ -73,6 +75,7 @@ private:
     mc::Chord chordAt(int bar, int barTick);
     int phraseLength() const;
     void updateVariation(int bar);
+    int progressionVariation(int bar) const; // -1 = none or unknown
 
     void playDrums(int bar, int stepInBar, int patternStep, int stepTicks);
     bool playBassStep(int patternStep, int bar, int barTick, int stepTicks, bool downbeat);
@@ -102,6 +105,7 @@ private:
     std::atomic<mc::VariationMode> m_variationMode{mc::VariationMode::InTurn};
     std::atomic<int> m_variationFixed{0};
     std::atomic<int> m_variationEvery{8};
+    std::atomic<bool> m_variationFromProgression{true};
 
     std::mutex m_mutex; // guards the three members below
     std::shared_ptr<const mc::Style> m_style;

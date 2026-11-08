@@ -5,13 +5,15 @@ played through the ALSA sequencer. Qt 6 user interface.
 
 ## Modes
 
-**Chord Progression**: type a progression (or pick a preset) and the band
-loops it.
+**Chord Progression**: type a progression (or pick a song) and the band
+loops it. **Help** in the tab, or **Help ▸ Song Help…** (F1), explains songs,
+the progression text and variation markers.
 
 ```
 | Dm7 | G7 | Cmaj7 | % |        # '%' repeats the previous bar
 | Bbmaj7 Gm7 | Cm7 F7 |          # two chords share a bar evenly
 | C / / G7 |                     # '/' repeats the previous chord (3+1 beats)
+[B] | F | G |                   # play the style variation B from here on
 ```
 
 Supported qualities: `C Cm Cdim Caug Csus2 Csus4 C5 C7 Cmaj7 Cm7 Cm7b5 Cdim7
@@ -22,17 +24,17 @@ zone (by default below C4) are analysed, and the band follows the detected
 chord. The chord stays latched after you release the keys. MIDI thru can
 forward your playing to channel 4 so you can hear yourself.
 
-## Preset files
+## Song files
 
-**File ▸ Save Preset As…** (Ctrl+S) stores the current song (style, tempo,
+**File ▸ Save Song As…** (Ctrl+S) stores the current song (style, tempo,
 swing, transpose, progression and band settings) as XML. **File ▸ Open
-Presets…** (Ctrl+O) loads a file. Its presets are added to the preset
-list and the first one is applied. A file can hold several presets:
+Songs…** (Ctrl+O) loads a file. Its songs are added to the song list and
+the first one is applied. A file can hold several songs:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<midicombo-presets version="1">
-    <preset name="Slow Blues">
+<midicombo-songs version="1">
+    <song name="Slow Blues">
         <style>Shuffle Blues</style>
         <tempo>72</tempo>
         <swing>0</swing>
@@ -46,14 +48,15 @@ list and the first one is applied. A file can hold several presets:
             <part name="piano" enabled="true" program="0" volume="100"/>
             <part name="pad" enabled="false" program="16" volume="90"/>
         </band>
-    </preset>
-</midicombo-presets>
+    </song>
+</midicombo-songs>
 ```
 
 Everything except `<progression>` is optional. A missing value keeps the
-style default, so hand-written files can be short. While a preset is
+style default, so hand-written files can be short. While a song is
 selected, switching the style only changes the patterns and keeps the
-preset's swing and band settings. `program` is the GM
+song's swing and band settings. Preset files of earlier versions
+(`<midicombo-presets>`) are still read. `program` is the GM
 program number counted from 0 (for drums, the drum kit number).
 
 ## Styles
@@ -99,8 +102,26 @@ such as **Walking**, **Montuno**, **Breakdown**, **Half-Time** or **Chorus**.
 - **Main** or a variation's name stays on that pattern.
 
 The label next to it shows what is playing, and a change takes effect at
-the next bar. Presets store this setting. Styles without variations
+the next bar. Songs store this setting. Styles without variations
 disable the control.
+
+A progression can also choose the variation per section with markers:
+`[Chorus]` plays the variation **Chorus** from that bar on, `[Main]` the
+main pattern, and `[auto]` returns to the toolbar setting. The built-in
+song **Pop Verse and Chorus in G** shows how:
+
+```
+[Main]
+| G | D | Em | C |
+| G | D | C  | % |
+[B]
+| C | G | D  | Em |
+| C | G | D  | %  |
+```
+
+Bars with a marker ignore the toolbar setting; the others follow it. A
+marker the style doesn't know shows a warning below the editor. The
+progression view shows the marker where the variation changes.
 
 ### Style editor
 
@@ -186,9 +207,10 @@ Loaded Styles** goes back to the built-in set. A loaded style with the same
 name as an existing one replaces it, so built-in styles can be overridden.
 
 `examples/styles/` contains Country Two-Step, Country Train Beat, Cha-Cha,
-Samba, 12/8 Slow Blues, 6/8 Folk, Disco, Hard Rock, Heavy Metal, Heavy Metal
-(Double Bass), Symphonic Rock, and the Jamaican styles Mento, Ska,
-Rocksteady and Rockers (installed to `share/midicombo/styles`).
+Samba, 12/8 Slow Blues, 6/8 Folk, Disco, Blues Rock, Hard Rock, Glam Metal,
+Sleaze Rock, Heavy Metal, Heavy Metal (Double Bass), Symphonic Rock, Grunge,
+and the Jamaican styles Mento, Ska, Rocksteady and Rockers (installed to
+`share/midicombo/styles`).
 
 ```xml
 <midicombo-styles version="1">
@@ -266,11 +288,11 @@ MIDI channels: 1 piano/comp, 2 bass, 3 pad, 4 MIDI thru, 5 guitar, 10 drums.
 | File | Purpose |
 |---|---|
 | `Chord`, `ChordDetector` | chord model, parsing, detection from held notes |
-| `Progression` | progression text format and presets |
+| `Progression` | progression text format, variation markers and built-in songs |
 | `Style` | band style patterns |
 | `BandEngine` | real-time sequencer thread (12 ticks per beat, swing, voice leading) |
 | `MidiEngine` | ALSA sequencer client, ports and connections |
 | `MainWindow`, `Widgets` | Qt user interface |
 | `StyleEditor` | style editor window: drum grid, step tracks, test and apply |
-| `StyleFile`, `PresetFile` | reading and writing the XML style and preset files |
+| `StyleFile`, `SongFile` | reading and writing the XML style and song files |
 | `icons/` | application icon (SVG source, rendered PNGs) and desktop entry |

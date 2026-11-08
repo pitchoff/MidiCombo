@@ -393,7 +393,13 @@ bool validateStyle(const Style &s, std::string &error)
     for (size_t i = 0; i < s.variations.size(); ++i) {
         const StyleVariation &v = s.variations[i];
         const std::string where = "variation '" + v.name + "': ";
-        if (v.name.empty() || v.name == "Main" || v.name == "in-turn" || v.name == "random")
+        // Reserved for the variation setting and for progression markers
+        // ("[Main]", "[auto]", matched without regard to case).
+        std::string key = v.name;
+        for (auto &c : key)
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        if (key.empty() || key == "main" || key == "auto" || key == "in-turn" || key == "random"
+            || v.name.find_first_of("[]|") != std::string::npos)
             return fail("a variation cannot be named '" + v.name + "'");
         for (size_t j = 0; j < i; ++j)
             if (s.variations[j].name == v.name)

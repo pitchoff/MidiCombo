@@ -2,7 +2,7 @@
 
 #include "BandEngine.h"
 #include "ChordDetector.h"
-#include "PresetFile.h"
+#include "SongFile.h"
 
 #include <QList>
 #include <QStringList>
@@ -54,12 +54,12 @@ private:
 
     void onStyleChanged(int index);
     void applyStyleDefaults(const mc::Style &style);
-    void onPresetChosen(int index);
-    void applyPreset(const PresetData &preset);
-    PresetData currentPreset(const QString &name) const;
-    int addPreset(const PresetData &preset);
-    void openPresetFile();
-    void savePresetFile();
+    void onSongChosen(int index);
+    void applySong(const SongData &song);
+    SongData currentSong(const QString &name) const;
+    int addSong(const SongData &song);
+    void openSongFile();
+    void saveSongFile();
     void openStyleFile();
     int loadStyleFile(const QString &path, bool interactive, QString *firstName = nullptr);
     void addStyle(const mc::Style &style);
@@ -76,6 +76,7 @@ private:
     void setVariationKey(const QString &key);
     const mc::Style &currentStyle() const;
     bool applyProgression();
+    void checkProgressionVariations(); // warns about variations the style doesn't have
     ChordMode currentMode() const;
 
     void refreshPorts();
@@ -104,7 +105,7 @@ private:
     mc::Progression m_progression;
     std::vector<mc::Style> m_styles; // built-in styles first, then styles loaded from files
     QStringList m_styleFiles;
-    QList<PresetData> m_presets; // built-in presets first, then presets loaded from files
+    QList<SongData> m_songs; // built-in songs first, then songs loaded from files
     StyleEditor *m_styleEditor = nullptr;
     mc::Style m_testStyle;         // style played while testing from the style editor
     int m_testVariation = 0;
@@ -130,7 +131,7 @@ private:
     QTabWidget *m_tabs = nullptr;
 
     // Progression mode
-    QComboBox *m_presetCombo = nullptr;
+    QComboBox *m_songCombo = nullptr;
     QSpinBox *m_transpose = nullptr;
     QPlainTextEdit *m_progressionEdit = nullptr;
     QLabel *m_progressionError = nullptr;

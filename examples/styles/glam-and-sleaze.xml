@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  1980s Sunset Strip styles for MidiCombo: glam metal and its rawer,
+  bluesier cousin sleaze rock. See country.xml for the pattern characters.
+
+  Glam metal: straight eighths, palm-muted power chords in the verse,
+  big open chords, open hi-hats and hand claps in the chorus, a synth pad
+  on the comp channel.
+  Sleaze rock: a light swing, open-chord strumming (voicing="full") on an
+  overdriven guitar, tambourine on 2 and 4 and a honky-tonk piano.
+-->
+<midicombo-styles version="1">
+
+    <!-- Verse: eighth-note chugs on the power chords, the synth holds the chord. -->
+    <style name="Glam Metal">
+        <meter beats="4" steps-per-beat="2" bars="2"/>
+        <tempo>132</tempo>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="closed-hat">XxXx XxXx | XxXx XxXx</row>
+            <row drum="snare">     ..X. ..X. | ..X. ..X.</row>
+            <row drum="kick">      X..x X... | X..x X..x</row>
+        </drums>
+        <fill>
+            <row drum="high-tom"> Xx.. ....</row>
+            <row drum="mid-tom">  ..Xx ....</row>
+            <row drum="floor-tom">.... Xx..</row>
+            <row drum="snare">    .... ..XX</row>
+            <row drum="kick">     X... X...</row>
+        </fill>
+        <bass program="34" velocity="104">RRRR RRRR | RRRR 8-5A</bass>
+        <comp program="89" velocity="48">C--- ---- | C--- ----</comp>
+        <guitar program="30" velocity="92" voicing="power">XxXx XxXx | XxXx D-U-</guitar>
+        <pad program="50" enabled="false"/>
+
+        <!-- Chorus: open hi-hats, claps on the backbeat, ringing power chords. -->
+        <variation name="Chorus">
+            <drums>
+                <row drum="open-hat">X.X. X.X. | X.X. X.X.</row>
+                <row drum="clap">    ..X. ..X. | ..X. ..X.</row>
+                <row drum="snare">   ..X. ..X. | ..X. ..X.</row>
+                <row drum="kick">    X... X... | X... X..x</row>
+            </drums>
+            <bass>R-RR R-RR | R-RR 5-A-</bass>
+            <comp>C--- C--- | C--- C---</comp>
+            <guitar>D--- --D- | D--- D-D-</guitar>
+        </variation>
+    </style>
+
+    <!-- Swaggering rock and roll: strummed open chords, tambourine, piano off-beats. -->
+    <style name="Sleaze Rock">
+        <meter beats="4" steps-per-beat="2" bars="2"/>
+        <tempo>124</tempo>
+        <swing amount="20" unit="8"/>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="closed-hat">XxXx XxXx | XxXx Xx..</row>
+            <row drum="open-hat">  .... .... | .... ..X.</row>
+            <row drum="tambourine">..X. ..X. | ..X. ..X.</row>
+            <row drum="snare">     ..X. ..X. | ..X. ..X.</row>
+            <row drum="kick">      X.x. X... | X.x. X..x</row>
+        </drums>
+        <fill>
+            <row drum="snare">    XxXx ....</row>
+            <row drum="high-tom"> .... Xx..</row>
+            <row drum="floor-tom">.... ..XX</row>
+            <row drum="kick">     X... X...</row>
+        </fill>
+        <bass program="33" velocity="100">R-R- 5-R- | R-5- 6-A-</bass>
+        <comp program="3" velocity="62">.c.c .c.c | .c.c .cc.</comp>
+        <guitar program="29" velocity="84" voicing="full">D.Du .uD. | D.Du .uDu</guitar>
+        <pad program="16" enabled="false"/>
+
+        <!-- Boogie: walking bass, palm-muted chugs, quarter notes on the hi-hat. -->
+        <variation name="Boogie">
+            <drums>
+                <row drum="closed-hat">X.X. X.X. | X.X. X.X.</row>
+                <row drum="tambourine">xxxx xxxx | xxxx xxxx</row>
+                <row drum="snare">     ..X. ..X. | ..X. ..X.</row>
+                <row drum="kick">      X... X... | X... X..x</row>
+            </drums>
+            <bass>R-3- 5-6- | 8-6- 5-3-</bass>
+            <guitar>XxXx XxXx | XxXx D.Du</guitar>
+        </variation>
+    </style>
+
+</midicombo-styles>

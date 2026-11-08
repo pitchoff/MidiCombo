@@ -3,8 +3,8 @@
 This document describes the formats MidiCombo reads and writes:
 
 1. [Chord symbols](#1-chord-symbols)
-2. [Chord progressions](#2-chord-progressions): the text in the progression editor and in presets
-3. [Preset files](#3-preset-files): `<midicombo-presets>`
+2. [Chord progressions](#2-chord-progressions): the text in the progression editor and in songs
+3. [Song files](#3-song-files): `<midicombo-songs>`
 4. [Style files](#4-style-files): `<midicombo-styles>`, including the
    [style editor](#the-style-editor) and how it writes them
 5. [Reference tables](#5-reference-tables)
@@ -70,6 +70,7 @@ A progression is plain text. It loops while the band plays.
 | `%` (alone in a bar) | repeats the whole previous bar |
 | line without `\|` | every chord is its own bar |
 | line starting with `#` | comment |
+| `[Name]` | plays the style variation *Name* from this bar on, see [below](#variation-markers) |
 
 ```
 # 12-bar blues
@@ -86,22 +87,55 @@ C Am F G
 Comments must be on their own line. A `#` after a chord is read as a
 chord and gives an "unknown chord" error.
 
-Errors (unknown chord, `/` or `%` with nothing before it, empty
-progression) are shown below the editor with their line number.
+Errors (unknown chord, `/` or `%` with nothing before it, an unclosed
+`[`, empty progression) are shown below the editor with their line number.
+
+### Variation markers
+
+A marker in square brackets chooses the style variation (see
+[Variations](#variations)) for the following bars, so a song can have a
+verse on the main pattern and a chorus on a variation:
+
+```
+[Main]
+| G | D | Em | C |
+| G | D | C  | % |
+[B]
+| C | G | D  | Em |
+| C | G | D  | %  |
+```
+
+| Marker | Meaning |
+|---|---|
+| `[Main]` | the main pattern |
+| `[Name]` | the variation called *Name*. Names may contain spaces (`[One Drop]`). |
+| `[auto]` | back to the **Variation** setting in the toolbar |
+
+- A marker on its own line or before the first bar line applies from the
+  next bar on. A marker inside a bar (`| [B] C |`) applies to that whole bar.
+- A marker stays in effect until the next one. It does not wrap around:
+  when the progression starts again, the first bars play what their own
+  markers say, and bars before the first marker follow the toolbar setting.
+- Names are matched without regard to case.
+- If the style has no variation of that name, a warning is shown below
+  the editor and those bars follow the toolbar setting. The progression
+  view shows the marker on each bar where the variation changes.
+- Markers apply in the Chord Progression mode only. While the style
+  editor tests a style, the band plays the variation open in the editor.
 
 ---
 
-## 3. Preset files
+## 3. Song files
 
-A preset stores one song: the style, tempo, swing, transpose, the chord
-progression and the band settings. **File ▸ Save Preset As…** writes one
-preset. A file can contain any number of presets, and **File ▸ Open
-Presets…** adds all of them to the preset list and applies the first.
+A song stores the style, tempo, swing, transpose, the chord progression
+and the band settings. **File ▸ Save Song As…** writes one song. A file
+can contain any number of songs, and **File ▸ Open Songs…** adds all of
+them to the song list and applies the first.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<midicombo-presets version="1">
-    <preset name="Slow Blues">
+<midicombo-songs version="1">
+    <song name="Slow Blues">
         <style>Shuffle Blues</style>
         <tempo>72</tempo>
         <swing>0</swing>
@@ -115,21 +149,25 @@ Presets…** adds all of them to the preset list and applies the first.
             <part name="piano" enabled="true" program="0" volume="100"/>
             <part name="pad" enabled="false" program="16" volume="90"/>
         </band>
-    </preset>
-</midicombo-presets>
+    </song>
+</midicombo-songs>
 ```
+
+Song files were called preset files in earlier versions. Files with
+`<midicombo-presets>` and `<preset>` elements are still read; MidiCombo
+writes the new names.
 
 ### Elements
 
 | Element | Content | If missing |
 |---|---|---|
-| `<preset name="…">` | display name in the preset list. A preset with the same name as a loaded one replaces it. | the file name is used |
+| `<song name="…">` | display name in the song list. A song with the same name as a loaded one replaces it. | the file name is used |
 | `<style>` | style name, a built-in or a loaded style (see [5.4](#54-built-in-styles)) | current style is kept |
 | `<tempo>` | BPM, 30–320 | current tempo is kept |
 | `<swing>` | percent, 0–100 | the style's swing |
 | `<transpose>` | semitones, −11 to 11 | 0 |
 | `<variation>` | how the band changes variations, see [below](#variation) | current setting is kept |
-| `<progression>` | progression text ([section 2](#2-chord-progressions)), **required** | the progression is empty |
+| `<progression>` | progression text ([section 2](#2-chord-progressions)), including [variation markers](#variation-markers), **required** | the progression is empty |
 | `<band>` | zero or more `<part>` elements | the style's defaults |
 
 `<tempo>`, `<swing>` and `<transpose>` must be integers, otherwise the
@@ -155,9 +193,11 @@ chooses among the style's variations:
 | `every` | bars between automatic changes, rounded up to whole patterns |
 
 If the style has no variation of that name, the band changes in turn.
-Without the element, the current setting stays.
+Without the element, the current setting stays. Bars with a
+[variation marker](#variation-markers) in the progression play the marked
+variation instead.
 
-### How a preset is applied
+### How a song is applied
 
 1. The style is selected, which sets swing, instruments and the pad switch
    to the style's defaults.
@@ -167,9 +207,9 @@ Without the element, the current setting stays.
 
 An unknown style name shows a message in the status bar and keeps the current style.
 
-While a preset is selected, choosing another style in the toolbar only
-changes the patterns. Tempo, swing and the band settings of the preset stay
-as they are. With no preset selected ("— choose a preset —"), a style
+While a song is selected, choosing another style in the toolbar only
+changes the patterns. Tempo, swing and the band settings of the song stay
+as they are. With no song selected ("— choose a song —"), a style
 change applies the style's defaults.
 
 ---
@@ -232,7 +272,7 @@ instead of writing the XML by hand.
 `drum="snare"` (see [5.1](#51-drum-names)), and the pattern as text.
 
 `program` and `enabled` are only defaults: they are applied when the style
-is selected while no preset is active, and the user (or a preset) can
+is selected while no song is active, and the user (or a song) can
 change them.
 
 ### The step grid
@@ -356,8 +396,10 @@ main pattern. Each is an alternative arrangement on the same grid:
 </variation>
 ```
 
-- `name` is required and must be unique within the style. `Main`,
-  `in-turn` and `random` are reserved.
+- `name` is required and must be unique within the style. `Main`, `auto`,
+  `in-turn` and `random` are reserved (in any case), and the characters
+  `[`, `]` and `|` are not allowed, so that every variation can be chosen
+  with a [marker in the progression](#variation-markers).
 - `<drums>`, `<fill>`, `<bass>`, `<comp>` and `<guitar>` are all optional. A part that
   is missing is taken from the main pattern, so a variation can change the
   bass alone. To silence a part, write rests, because an empty `<bass>` or
@@ -505,7 +547,7 @@ All 128 programs are listed in the instrument menus of the app (counted from 1 t
 
 ### 5.3 Drum kits
 
-Used as `program` of the `drums` part in presets. Availability depends on
+Used as `program` of the `drums` part in songs. Availability depends on
 the synthesizer and soundfont.
 
 | Program | Kit | Program | Kit |
@@ -521,7 +563,8 @@ the synthesizer and soundfont.
 `Shuffle Blues`.
 
 Example style files in `examples/styles/`: `country.xml`, `latin.xml`,
-`blues-and-folk.xml`, `disco.xml`, `hard-rock.xml`, `heavy-metal.xml`,
+`blues-and-folk.xml`, `blues-rock.xml`, `disco.xml`, `glam-and-sleaze.xml`,
+`grunge.xml`, `hard-rock.xml`, `heavy-metal.xml`, `jamaican.xml`,
 `symphonic-rock.xml`.
 
 ### 5.5 MIDI channels

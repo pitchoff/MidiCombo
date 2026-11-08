@@ -11,11 +11,21 @@ ProgressionView::ProgressionView(QWidget *parent)
 void ProgressionView::setProgression(const mc::Progression &progression)
 {
     m_labels.clear();
-    for (const auto &bar : progression.bars) {
+    m_variations.clear();
+    std::string previous;
+    for (int b = 0; b < progression.size(); ++b) {
+        const auto &bar = progression.bars[b];
         QStringList names;
         for (size_t i = 0; i < bar.size(); ++i)
             names << (i > 0 && bar[i] == bar[i - 1] ? QStringLiteral("/") : QString::fromStdString(bar[i].name()));
         m_labels << names.join(QStringLiteral("  "));
+
+        const std::string &v = progression.variationAt(b);
+        if (v == previous)
+            m_variations << QString();
+        else
+            m_variations << (v.empty() ? tr("auto") : QString::fromStdString(v));
+        previous = v;
     }
     m_current = -1;
     updateGeometry();
@@ -50,7 +60,8 @@ void ProgressionView::paintEvent(QPaintEvent *)
     QFont f = font();
     f.setPointSizeF(f.pointSizeF() * 1.3);
     f.setBold(true);
-    p.setFont(f);
+    QFont small = font();
+    small.setPointSizeF(small.pointSizeF() * 0.85);
 
     for (int i = 0; i < m_labels.size(); ++i) {
         const QRectF r(4 + (i % BarsPerRow) * cellW, 4 + (i / BarsPerRow) * RowHeight, cellW - 4, RowHeight - 6);
@@ -59,7 +70,12 @@ void ProgressionView::paintEvent(QPaintEvent *)
         p.setBrush(current ? pal.color(QPalette::Highlight) : pal.color(QPalette::Base));
         p.drawRoundedRect(r, 5, 5);
         p.setPen(current ? pal.color(QPalette::HighlightedText) : pal.color(QPalette::Text));
+        p.setFont(f);
         p.drawText(r, Qt::AlignCenter, m_labels[i]);
+        if (!m_variations[i].isEmpty()) {
+            p.setFont(small);
+            p.drawText(r.adjusted(6, 2, -6, 0), Qt::AlignLeft | Qt::AlignTop, QStringLiteral("[%1]").arg(m_variations[i]));
+        }
     }
 }
 

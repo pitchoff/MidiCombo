@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Grunge for MidiCombo. See country.xml for the pattern characters.
+
+  Built on the quiet verse / loud chorus contrast: the main pattern is the
+  quiet verse with soft drums and the guitar picking single strings of the
+  power chord; "Loud" is the chorus with crashing open hi-hats and strummed
+  power chords; "Sludge" is a slow, heavy half-time feel. Put the sections
+  in the progression with [Main], [Loud] and [Sludge].
+-->
+<midicombo-styles version="1">
+
+    <style name="Grunge">
+        <meter beats="4" steps-per-beat="2" bars="2"/>
+        <tempo>116</tempo>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="closed-hat">xoxo xoxo | xoxo xoxo</row>
+            <row drum="snare">     ..x. ..x. | ..x. ..x.</row>
+            <row drum="kick">      x..x .x.. | x..x x...</row>
+        </drums>
+        <fill>
+            <row drum="snare">    ..X. XxXx</row>
+            <row drum="floor-tom">XX.. ....</row>
+            <row drum="kick">     X... X...</row>
+        </fill>
+        <bass program="34" velocity="100">R--- R-.R | R--- 5-A-</bass>
+        <comp program="0" velocity="60">.... .... | .... ....</comp>
+        <guitar program="29" velocity="80" voicing="power">1-2- 3-2- | 1-2- 3-2-</guitar>
+        <pad program="48" enabled="false"/>
+
+        <!-- The chorus: everything loud. -->
+        <variation name="Loud">
+            <drums>
+                <row drum="open-hat">XxXx XxXx | XxXx XxXx</row>
+                <row drum="snare">   ..X. ..X. | ..X. ..X.</row>
+                <row drum="kick">    X..X X... | X..X .X..</row>
+            </drums>
+            <bass>RRRR RRRR | RRRR 5-A-</bass>
+            <guitar>D--D --D- | D--D -DD-</guitar>
+        </variation>
+
+        <!-- Half time: snare on 3, long chords, the bass on the root. -->
+        <variation name="Sludge">
+            <drums>
+                <row drum="ride"> X.X. X.X. | X.X. X.X.</row>
+                <row drum="snare">.... X... | .... X...</row>
+                <row drum="kick"> X..x .... | X..x ..x.</row>
+            </drums>
+            <bass>R--- ---R | R--- 5-A-</bass>
+            <guitar>D--- ---- | D--- D-D-</guitar>
+        </variation>
+    </style>
+
+</midicombo-styles>

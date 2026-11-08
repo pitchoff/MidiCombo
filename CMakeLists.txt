@@ -29,8 +29,9 @@ add_executable(midicombo
     src/main.cpp
     src/MidiEngine.cpp
     src/BandEngine.cpp
+    src/HelpWindow.cpp
     src/MainWindow.cpp
-    src/PresetFile.cpp
+    src/SongFile.cpp
     src/StyleEditor.cpp
     src/StyleFile.cpp
     src/Widgets.cpp
@@ -44,10 +45,10 @@ add_executable(test_core tests/test_core.cpp)
 target_link_libraries(test_core PRIVATE midicombo_core)
 add_test(NAME core COMMAND test_core)
 
-add_executable(test_presets tests/test_presets.cpp src/PresetFile.cpp)
-target_include_directories(test_presets PRIVATE src)
-target_link_libraries(test_presets PRIVATE Qt6::Core)
-add_test(NAME presets COMMAND test_presets)
+add_executable(test_songs tests/test_songs.cpp src/SongFile.cpp)
+target_include_directories(test_songs PRIVATE src)
+target_link_libraries(test_songs PRIVATE Qt6::Core)
+add_test(NAME songs COMMAND test_songs)
 
 add_executable(test_styles tests/test_styles.cpp src/StyleFile.cpp)
 target_compile_definitions(test_styles PRIVATE EXAMPLES_DIR="${CMAKE_SOURCE_DIR}/examples")

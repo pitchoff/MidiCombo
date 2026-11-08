@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "HelpWindow.h"
 
 #include "MidiEngine.h"
 #include "StyleEditor.h"
@@ -56,6 +57,104 @@ bool parsePortId(const QString &id, int &client, int &port)
     client = parts[0].toInt(&ok1);
     port = parts[1].toInt(&ok2);
     return ok1 && ok2;
+}
+
+QString songDir(const QSettings &settings)
+{
+    // "presetDir" is the key of older versions.
+    return settings.value("songDir", settings.value("presetDir", QDir::homePath())).toString();
+}
+
+void showSongHelp(QWidget *parent)
+{
+    showHelpWindow(parent, QStringLiteral("songHelp"), QObject::tr("Song Help"), QObject::tr(R"html(
+<h2>Songs and chord progressions</h2>
+<p>In the <b>Chord Progression</b> tab you write the chords of a song, and the band loops them
+in the style chosen in the toolbar. A <i>song</i> keeps everything that belongs to a tune
+together: style, tempo, swing, variation setting, transpose, the progression and the band
+settings.</p>
+
+<h3>The song list</h3>
+<ul>
+<li><b>Song</b> lists the built-in songs, then the songs loaded from files. Choosing one sets
+the style, tempo and everything else it stores, and replaces the progression text.</li>
+<li><b>Open…</b> (File ▸ Open Songs…, Ctrl+O) loads a song file. All its songs are added to
+the list and the first one is applied. A song with the same name as one loaded before
+replaces it. Preset files of earlier versions open as well.</li>
+<li><b>Save…</b> (File ▸ Save Song As…, Ctrl+S) stores the current settings as a song. The
+file name becomes the song name.</li>
+<li>While a song is selected, choosing another style in the toolbar only changes the
+patterns: the song's swing and instruments stay. With <i>— choose a song —</i> selected,
+a style brings its own defaults.</li>
+<li><b>Transpose</b> moves all chords up or down by up to 11 semitones without changing the
+text.</li>
+</ul>
+
+<h3>Writing a progression</h3>
+<p>Changes are applied as you type, from the next bar on. Errors are shown in red under the
+text, with their line number; the band keeps playing the last correct version.</p>
+<table border="1" cellspacing="0" cellpadding="4">
+<tr><th>Write</th><th>Meaning</th></tr>
+<tr><td><tt>|</tt></td><td>bar line</td></tr>
+<tr><td><tt>| C G |</tt></td><td>chords in one bar share it evenly (two beats each in 4/4)</td></tr>
+<tr><td><tt>/</tt> &nbsp;<tt>.</tt> &nbsp;<tt>-</tt></td><td>repeat the previous chord:
+<tt>| C / / G7 |</tt> is three beats C, one beat G7</td></tr>
+<tr><td><tt>%</tt></td><td>repeat the previous bar</td></tr>
+<tr><td><tt>C Am F G</tt></td><td>a line without <tt>|</tt>: one chord per bar</td></tr>
+<tr><td><tt># …</tt></td><td>a comment, on its own line</td></tr>
+<tr><td><tt>[Chorus]</tt></td><td>a variation marker, see below</td></tr>
+</table>
+<p>Chords: <tt>C Cm Cdim Caug Csus2 Csus4 C5 C7 Cmaj7 Cm7 Cm7b5 Cdim7 CmMaj7 C6 Cm6 C7sus4
+Cadd9 C9 Cmaj9 Cm9 C7#5 C7b9</tt> on any root with <tt>#</tt> or <tt>b</tt>, and slash chords
+such as <tt>C/E</tt> for another bass note. Common other spellings work too
+(<tt>-7</tt>, <tt>^7</tt>, <tt>ø</tt>, <tt>sus</tt>).</p>
+<pre>
+# 12-bar blues
+| F7  | Bb7 | F7 | %  |
+| Bb7 | %   | F7 | %  |
+| C7  | Bb7 | F7 | C7 |
+</pre>
+
+<h3><a name="markers"></a>Verse, chorus: variation markers</h3>
+<p>Most styles have variations, alternative patterns for the band. <b>Variation</b> in the
+toolbar changes them automatically, but a song can also say which part plays where:</p>
+<pre>
+[Main]
+| G | D | Em | C |
+| G | D | C  | % |
+[B]
+| C | G | D  | Em |
+| C | G | D  | %  |
+</pre>
+<ul>
+<li><tt>[Name]</tt> plays the variation <i>Name</i> from this bar on, until the next marker.
+Upper and lower case don't matter, and names may contain spaces: <tt>[One Drop]</tt>.</li>
+<li><tt>[Main]</tt> plays the main pattern, <tt>[auto]</tt> goes back to the toolbar
+setting.</li>
+<li>A marker on its own line applies from the next bar; a marker inside a bar
+(<tt>| [B] C |</tt>) applies to that bar.</li>
+<li>Bars before the first marker follow the toolbar setting. When the progression starts
+over, nothing carries over from its end.</li>
+<li>If the style has no variation of that name, an orange note under the text says so, and
+those bars follow the toolbar setting.</li>
+</ul>
+<p>The variation names of a style are listed in the toolbar's <b>Variation</b> list and in
+the style editor (Window ▸ Style Editor…).</p>
+
+<h3>While the band plays</h3>
+<ul>
+<li>The bars below the text show the progression; the playing bar is highlighted. A bar where
+a marker changes the variation shows it in its corner.</li>
+<li>Play with Ctrl+Space; <b>Count-in</b> in the toolbar gives one bar of clicks first.</li>
+<li>The last bar of every phrase plays the style's drum fill, and the crash marks the start of
+the next phrase. A phrase is as long as the progression; progressions of 16, 24, … bars use
+8-bar phrases, and those shorter than 4 bars use 8 bars.</li>
+</ul>
+
+<h3>Song files</h3>
+<p>Songs are XML files that can also be written by hand; everything except the progression
+is optional. The format is described in <tt>syntax.md</tt>.</p>
+)html"));
 }
 
 } // namespace
@@ -172,8 +271,8 @@ void MainWindow::buildUi()
 
     // Menus
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
-    fileMenu->addAction(tr("&Open Presets…"), QKeySequence::Open, this, &MainWindow::openPresetFile);
-    fileMenu->addAction(tr("&Save Preset As…"), QKeySequence::Save, this, &MainWindow::savePresetFile);
+    fileMenu->addAction(tr("&Open Songs…"), QKeySequence::Open, this, &MainWindow::openSongFile);
+    fileMenu->addAction(tr("&Save Song As…"), QKeySequence::Save, this, &MainWindow::saveSongFile);
     fileMenu->addSeparator();
     fileMenu->addAction(tr("Load St&yles…"), QKeySequence(Qt::CTRL | Qt::Key_L), this, &MainWindow::openStyleFile);
     fileMenu->addAction(tr("&Forget Loaded Styles"), this, &MainWindow::forgetLoadedStyles);
@@ -186,6 +285,7 @@ void MainWindow::buildUi()
     QMenu *windowMenu = menuBar()->addMenu(tr("&Window"));
     windowMenu->addAction(tr("&Style Editor…"), QKeySequence(Qt::CTRL | Qt::Key_E), this, &MainWindow::showStyleEditor);
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
+    helpMenu->addAction(tr("S&ong Help…"), QKeySequence::HelpContents, this, [this] { showSongHelp(this); });
     helpMenu->addAction(tr("Style &Editor Help…"), this, [this] { showStyleEditorHelp(this); });
     helpMenu->addAction(tr("&Sound Setup…"), this, [this] {
         QMessageBox::information(this, tr("Sound Setup"),
@@ -250,27 +350,31 @@ QWidget *MainWindow::buildProgressionTab()
     auto *layout = new QVBoxLayout(w);
 
     auto *row = new QHBoxLayout;
-    row->addWidget(new QLabel(tr("Preset:")));
-    m_presetCombo = new QComboBox;
-    m_presetCombo->addItem(tr("— choose a preset —"));
-    for (const auto &p : mc::progressionPresets()) {
-        PresetData preset;
-        preset.name = QString::fromUtf8(p.name);
-        preset.style = QString::fromUtf8(p.style);
-        preset.tempo = p.tempo;
-        preset.progression = QString::fromUtf8(p.text).trimmed();
-        addPreset(preset);
+    row->addWidget(new QLabel(tr("Song:")));
+    m_songCombo = new QComboBox;
+    m_songCombo->addItem(tr("— choose a song —"));
+    for (const auto &p : mc::builtinSongs()) {
+        SongData song;
+        song.name = QString::fromUtf8(p.name);
+        song.style = QString::fromUtf8(p.style);
+        song.tempo = p.tempo;
+        song.progression = QString::fromUtf8(p.text).trimmed();
+        addSong(song);
     }
-    connect(m_presetCombo, &QComboBox::activated, this, &MainWindow::onPresetChosen);
-    row->addWidget(m_presetCombo, 1);
+    connect(m_songCombo, &QComboBox::activated, this, &MainWindow::onSongChosen);
+    row->addWidget(m_songCombo, 1);
     auto *openButton = new QPushButton(tr("Open…"));
-    openButton->setToolTip(tr("Load presets from an XML file"));
-    connect(openButton, &QPushButton::clicked, this, &MainWindow::openPresetFile);
+    openButton->setToolTip(tr("Load songs from an XML file"));
+    connect(openButton, &QPushButton::clicked, this, &MainWindow::openSongFile);
     row->addWidget(openButton);
     auto *saveButton = new QPushButton(tr("Save…"));
     saveButton->setToolTip(tr("Save style, tempo, progression and band settings to an XML file"));
-    connect(saveButton, &QPushButton::clicked, this, &MainWindow::savePresetFile);
+    connect(saveButton, &QPushButton::clicked, this, &MainWindow::saveSongFile);
     row->addWidget(saveButton);
+    auto *helpButton = new QPushButton(tr("Help"));
+    helpButton->setToolTip(tr("How songs and the progression text work (F1)"));
+    connect(helpButton, &QPushButton::clicked, this, [this] { showSongHelp(this); });
+    row->addWidget(helpButton);
     row->addSpacing(20);
     row->addWidget(new QLabel(tr("Transpose:")));
     m_transpose = new QSpinBox;
@@ -287,6 +391,8 @@ QWidget *MainWindow::buildProgressionTab()
         tr("Bars are separated by '|', chords inside a bar share it evenly.\n"
            "'/' repeats the previous chord, '%' repeats the previous bar,\n"
            "lines starting with '#' are comments.\n"
+           "[Name] plays the style variation Name from that bar on,\n"
+           "[Main] the main pattern, [auto] follows the Variation setting.\n"
            "Examples: C  Am7  F#m7b5  Bb7  Ebmaj7  Gsus4  D9  C/E"));
     m_progressionEdit->setMaximumHeight(130);
     layout->addWidget(m_progressionEdit);
@@ -506,14 +612,14 @@ void MainWindow::onBandChord(const QString &name)
 
 // ---------------------------------------------------------------- styles and progressions
 
-// While a preset is selected, a style change only switches the patterns and
-// keeps the preset's swing and band settings.
+// While a song is selected, a style change only switches the patterns and
+// keeps the song's swing and band settings.
 void MainWindow::onStyleChanged(int index)
 {
     if (index < 0)
         return;
     sendStyle();
-    if (m_presetCombo->currentIndex() <= 0)
+    if (m_songCombo->currentIndex() <= 0)
         applyStyleDefaults(m_styles[index]);
 }
 
@@ -634,6 +740,7 @@ void MainWindow::sendStyle()
         m_engine->setTempo(m_tempo->value());
         m_engine->setSwing(m_swing->value() / 100.0);
         updateVariationCombo();
+        checkProgressionVariations();
     }
     sendVariation();
 }
@@ -643,8 +750,8 @@ void MainWindow::sendStyle()
 void MainWindow::sendVariation()
 {
     const int data = m_variationCombo->currentData().toInt();
-    if (m_testing) // a test plays the variation open in the style editor
-        m_engine->setVariationPlan(mc::VariationMode::Fixed, m_testVariation, m_variationEvery->value());
+    if (m_testing) // a test plays the variation open in the style editor, whatever the progression says
+        m_engine->setVariationPlan(mc::VariationMode::Fixed, m_testVariation, m_variationEvery->value(), false);
     else if (data < 0)
         m_engine->setVariationPlan(data == -2 ? mc::VariationMode::Random : mc::VariationMode::InTurn, 0,
                                    m_variationEvery->value());
@@ -776,37 +883,37 @@ void MainWindow::forgetLoadedStyles()
     statusBar()->showMessage(tr("Removed all loaded styles"), 4000);
 }
 
-void MainWindow::onPresetChosen(int index)
+void MainWindow::onSongChosen(int index)
 {
     bool ok = false;
-    const int presetIdx = m_presetCombo->itemData(index).toInt(&ok);
-    if (ok && presetIdx >= 0 && presetIdx < m_presets.size())
-        applyPreset(m_presets[presetIdx]);
+    const int songIdx = m_songCombo->itemData(index).toInt(&ok);
+    if (ok && songIdx >= 0 && songIdx < m_songs.size())
+        applySong(m_songs[songIdx]);
 }
 
-void MainWindow::applyPreset(const PresetData &preset)
+void MainWindow::applySong(const SongData &song)
 {
-    // The style defaults go first; the preset's values override them.
-    const int styleIdx = m_styleCombo->findText(preset.style);
+    // The style defaults go first; the song's values override them.
+    const int styleIdx = m_styleCombo->findText(song.style);
     if (styleIdx >= 0) {
         QSignalBlocker block(m_styleCombo);
         m_styleCombo->setCurrentIndex(styleIdx);
-    } else if (!preset.style.isEmpty()) {
-        statusBar()->showMessage(tr("Unknown style '%1' – keeping the current style").arg(preset.style), 5000);
+    } else if (!song.style.isEmpty()) {
+        statusBar()->showMessage(tr("Unknown style '%1' – keeping the current style").arg(song.style), 5000);
     }
     sendStyle();
     applyStyleDefaults(currentStyle());
-    if (preset.tempo > 0)
-        m_tempo->setValue(preset.tempo);
-    if (preset.swing >= 0)
-        m_swing->setValue(preset.swing);
-    if (preset.variationEvery > 0)
-        m_variationEvery->setValue(preset.variationEvery);
-    if (!preset.variation.isEmpty())
-        setVariationKey(preset.variation);
+    if (song.tempo > 0)
+        m_tempo->setValue(song.tempo);
+    if (song.swing >= 0)
+        m_swing->setValue(song.swing);
+    if (song.variationEvery > 0)
+        m_variationEvery->setValue(song.variationEvery);
+    if (!song.variation.isEmpty())
+        setVariationKey(song.variation);
 
-    for (int i = 0; i < PresetData::PartCount; ++i) {
-        const PresetData::Part &part = preset.parts[i];
+    for (int i = 0; i < SongData::PartCount; ++i) {
+        const SongData::Part &part = song.parts[i];
         if (!part.present)
             continue;
         PartControls &pc = m_parts[i];
@@ -819,106 +926,106 @@ void MainWindow::applyPreset(const PresetData &preset)
 
     {
         QSignalBlocker block(m_transpose); // applyProgression() below picks it up
-        m_transpose->setValue(preset.transpose);
+        m_transpose->setValue(song.transpose);
     }
-    m_progressionEdit->setPlainText(preset.progression);
+    m_progressionEdit->setPlainText(song.progression);
     applyProgression();
 }
 
-PresetData MainWindow::currentPreset(const QString &name) const
+SongData MainWindow::currentSong(const QString &name) const
 {
-    PresetData preset;
-    preset.name = name;
-    preset.style = m_styleCombo->currentText();
-    preset.tempo = m_tempo->value();
-    preset.swing = m_swing->value();
-    preset.variation = variationKey();
-    preset.variationEvery = m_variationEvery->value();
-    preset.transpose = m_transpose->value();
-    preset.progression = m_progressionEdit->toPlainText().trimmed();
-    for (int i = 0; i < PresetData::PartCount; ++i) {
-        PresetData::Part &part = preset.parts[i];
+    SongData song;
+    song.name = name;
+    song.style = m_styleCombo->currentText();
+    song.tempo = m_tempo->value();
+    song.swing = m_swing->value();
+    song.variation = variationKey();
+    song.variationEvery = m_variationEvery->value();
+    song.transpose = m_transpose->value();
+    song.progression = m_progressionEdit->toPlainText().trimmed();
+    for (int i = 0; i < SongData::PartCount; ++i) {
+        SongData::Part &part = song.parts[i];
         part.present = true;
         part.enabled = m_parts[i].enabled->isChecked();
         part.program = m_parts[i].program->currentData().toInt();
         part.volume = m_parts[i].volume->value();
     }
-    return preset;
+    return song;
 }
 
-// Adds a preset to the preset list, replacing a loaded preset of the same
+// Adds a song to the song list, replacing a loaded song of the same
 // name, and returns its index in the combo box.
-int MainWindow::addPreset(const PresetData &preset)
+int MainWindow::addSong(const SongData &song)
 {
-    const int builtinCount = static_cast<int>(mc::progressionPresets().size());
-    for (int i = builtinCount; i < m_presets.size(); ++i) {
-        if (m_presets[i].name == preset.name) {
-            m_presets[i] = preset;
-            return m_presetCombo->findData(i);
+    const int builtinCount = static_cast<int>(mc::builtinSongs().size());
+    for (int i = builtinCount; i < m_songs.size(); ++i) {
+        if (m_songs[i].name == song.name) {
+            m_songs[i] = song;
+            return m_songCombo->findData(i);
         }
     }
-    if (m_presets.size() == builtinCount && builtinCount > 0)
-        m_presetCombo->insertSeparator(m_presetCombo->count());
-    m_presets.append(preset);
-    m_presetCombo->addItem(preset.name, static_cast<int>(m_presets.size() - 1));
-    return m_presetCombo->count() - 1;
+    if (m_songs.size() == builtinCount && builtinCount > 0)
+        m_songCombo->insertSeparator(m_songCombo->count());
+    m_songs.append(song);
+    m_songCombo->addItem(song.name, static_cast<int>(m_songs.size() - 1));
+    return m_songCombo->count() - 1;
 }
 
-void MainWindow::openPresetFile()
+void MainWindow::openSongFile()
 {
     QSettings settings;
-    const QString path = QFileDialog::getOpenFileName(this, tr("Open Presets"),
-                                                      settings.value("presetDir", QDir::homePath()).toString(),
-                                                      tr("MidiCombo presets (*.xml);;All files (*)"));
+    const QString path = QFileDialog::getOpenFileName(this, tr("Open Songs"),
+                                                      songDir(settings),
+                                                      tr("MidiCombo songs (*.xml);;All files (*)"));
     if (path.isEmpty())
         return;
-    settings.setValue("presetDir", QFileInfo(path).absolutePath());
+    settings.setValue("songDir", QFileInfo(path).absolutePath());
 
-    QList<PresetData> presets;
+    QList<SongData> songs;
     QString error;
-    if (!readPresetFile(path, presets, error)) {
-        QMessageBox::warning(this, tr("Open Presets"), tr("Could not read %1:\n%2").arg(path, error));
+    if (!readSongFile(path, songs, error)) {
+        QMessageBox::warning(this, tr("Open Songs"), tr("Could not read %1:\n%2").arg(path, error));
         return;
     }
 
     int firstIdx = -1;
-    for (PresetData &p : presets) {
+    for (SongData &p : songs) {
         if (p.name.isEmpty())
             p.name = QFileInfo(path).completeBaseName();
-        const int idx = addPreset(p);
+        const int idx = addSong(p);
         if (firstIdx < 0)
             firstIdx = idx;
     }
-    m_presetCombo->setCurrentIndex(firstIdx);
-    applyPreset(presets.first());
-    statusBar()->showMessage(tr("Loaded %n preset(s) from %1", nullptr, presets.size())
+    m_songCombo->setCurrentIndex(firstIdx);
+    applySong(songs.first());
+    statusBar()->showMessage(tr("Loaded %n song(s) from %1", nullptr, songs.size())
                                  .arg(QFileInfo(path).fileName()), 4000);
 }
 
-void MainWindow::savePresetFile()
+void MainWindow::saveSongFile()
 {
     QSettings settings;
-    const int presetIdx = m_presetCombo->currentData().isValid() ? m_presetCombo->currentData().toInt() : -1;
-    const QString suggestedName = presetIdx >= 0 ? m_presets[presetIdx].name : tr("My Song");
-    const QString dir = settings.value("presetDir", QDir::homePath()).toString();
+    const int songIdx = m_songCombo->currentData().isValid() ? m_songCombo->currentData().toInt() : -1;
+    const QString suggestedName = songIdx >= 0 ? m_songs[songIdx].name : tr("My Song");
+    const QString dir = songDir(settings);
 
-    QFileDialog dialog(this, tr("Save Preset As"), dir, tr("MidiCombo presets (*.xml)"));
+    QFileDialog dialog(this, tr("Save Song As"), dir, tr("MidiCombo songs (*.xml)"));
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     dialog.setDefaultSuffix(QStringLiteral("xml"));
     dialog.selectFile(suggestedName + QStringLiteral(".xml"));
     if (dialog.exec() != QDialog::Accepted || dialog.selectedFiles().isEmpty())
         return;
     const QString path = dialog.selectedFiles().first();
-    settings.setValue("presetDir", QFileInfo(path).absolutePath());
+    settings.setValue("songDir", QFileInfo(path).absolutePath());
 
-    const PresetData preset = currentPreset(QFileInfo(path).completeBaseName());
+    const SongData song = currentSong(QFileInfo(path).completeBaseName());
     QString error;
-    if (!writePresetFile(path, {preset}, error)) {
-        QMessageBox::warning(this, tr("Save Preset"), tr("Could not write %1:\n%2").arg(path, error));
+    if (!writeSongFile(path, {song}, error)) {
+        QMessageBox::warning(this, tr("Save Song"), tr("Could not write %1:\n%2").arg(path, error));
         return;
     }
-    m_presetCombo->setCurrentIndex(addPreset(preset));
-    statusBar()->showMessage(tr("Saved preset to %1").arg(QFileInfo(path).fileName()), 4000);
+    m_songCombo->setCurrentIndex(addSong(song));
+    statusBar()->showMessage(tr("Saved song to %1").arg(QFileInfo(path).fileName()), 4000);
 }
 
 bool MainWindow::applyProgression()
@@ -927,14 +1034,37 @@ bool MainWindow::applyProgression()
     mc::Progression p;
     std::string error;
     if (!mc::Progression::parse(m_progressionEdit->toPlainText().toStdString(), p, error)) {
+        m_progressionError->setProperty("parseError", true);
+        m_progressionError->setStyleSheet(QStringLiteral("color: #d03030;"));
         m_progressionError->setText(QString::fromStdString(error));
         return false;
     }
-    m_progressionError->clear();
+    m_progressionError->setProperty("parseError", false);
     m_progression = p.transposed(m_transpose->value());
     m_engine->setProgression(m_progression);
     m_progressionView->setProgression(m_progression);
+    checkProgressionVariations();
     return true;
+}
+
+void MainWindow::checkProgressionVariations()
+{
+    if (!m_progressionError || m_progressionError->property("parseError").toBool())
+        return;
+    const mc::Style &style = currentStyle();
+    QStringList missing;
+    for (const std::string &name : m_progression.variationNames()) {
+        bool found = QString::fromStdString(name).compare(QLatin1String("Main"), Qt::CaseInsensitive) == 0;
+        for (const auto &v : style.variations)
+            found |= QString::fromStdString(name).compare(QString::fromStdString(v.name), Qt::CaseInsensitive) == 0;
+        if (!found)
+            missing << QStringLiteral("[%1]").arg(QString::fromStdString(name));
+    }
+    m_progressionError->setStyleSheet(QStringLiteral("color: #c07000;"));
+    m_progressionError->setText(
+        missing.isEmpty() ? QString()
+                          : tr("Style '%1' has no variation %2; those bars follow the Variation setting.")
+                                .arg(QString::fromStdString(style.name), missing.join(QStringLiteral(", "))));
 }
 
 // ---------------------------------------------------------------- MIDI ports
@@ -1106,7 +1236,7 @@ void MainWindow::loadSettings()
     setVariationKey(s.value("variation", QStringLiteral("in-turn")).toString());
     m_countIn->setChecked(s.value("countIn", true).toBool());
 
-    const QString defaultText = QString::fromUtf8(mc::progressionPresets()[3].text);
+    const QString defaultText = QString::fromUtf8(mc::builtinSongs()[3].text);
     m_progressionEdit->setPlainText(s.value("progression", defaultText).toString());
     m_transpose->setValue(s.value("transpose", 0).toInt());
     m_tabs->setCurrentIndex(s.value("mode", 0).toInt());

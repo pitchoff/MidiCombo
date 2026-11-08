@@ -1,4 +1,5 @@
 #include "StyleEditor.h"
+#include "HelpWindow.h"
 
 #include "StyleFile.h"
 #include "Widgets.h"
@@ -29,7 +30,6 @@
 #include <QSpinBox>
 #include <QStyle>
 #include <QTabWidget>
-#include <QTextBrowser>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -72,17 +72,7 @@ mc::Style defaultStyle(const QString &name)
 
 void showStyleEditorHelp(QWidget *parent)
 {
-    const QString name = QStringLiteral("styleEditorHelp");
-    auto *dialog = parent->findChild<QDialog *>(name, Qt::FindDirectChildrenOnly);
-    if (!dialog) {
-        dialog = new QDialog(parent);
-        dialog->setObjectName(name);
-        dialog->setWindowFlag(Qt::Window);
-        dialog->setWindowTitle(QObject::tr("Style Editor Help"));
-        auto *layout = new QVBoxLayout(dialog);
-        auto *text = new QTextBrowser;
-        text->setOpenLinks(true);
-        text->setHtml(QObject::tr(R"html(
+    showHelpWindow(parent, QStringLiteral("styleEditorHelp"), QObject::tr("Style Editor Help"), QObject::tr(R"html(
 <h2>Style Editor</h2>
 <p>The style editor creates new band styles and changes existing ones. It is a separate
 window, so the main window stays usable and the band can keep playing.
@@ -149,7 +139,8 @@ rests, new bars repeat the existing ones. A coarser grid drops the steps in betw
 <h3><a name="variations"></a>Variations</h3>
 <p>A variation is an alternative arrangement of the style, so the band doesn't repeat the
 same bars all song. In the main window, <b>Variation</b> changes them in turn or at random
-every few bars, or stays on one.</p>
+every few bars, or stays on one. A chord progression can also pick them per section with
+markers such as <code>[Chorus]</code>, <code>[Main]</code> or <code>[auto]</code>.</p>
 <ul>
 <li><b>Pattern</b> chooses what the grids show: the main pattern or a variation.</li>
 <li><b>Add Variation</b> copies the pattern shown, so you only change what should differ.
@@ -183,15 +174,6 @@ XML comments are lost.</li>
 </ol>
 <p>The file format is described in <tt>syntax.md</tt>.</p>
 )html"));
-        layout->addWidget(text);
-        auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close);
-        QObject::connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::hide);
-        layout->addWidget(buttons);
-        dialog->resize(720, 760);
-    }
-    dialog->show();
-    dialog->raise();
-    dialog->activateWindow();
 }
 
 // ---------------------------------------------------------------- StepGrid

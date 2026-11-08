@@ -1,9 +1,71 @@
 #include "Progression.h"
 
 #include <algorithm>
+#include <cctype>
 #include <sstream>
 
 namespace mc {
+
+namespace {
+
+constexpr char MarkerTag = '\x01';
+
+std::string lower(std::string s)
+{
+    for (auto &c : s)
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return s;
+}
+
+std::string trimmed(const std::string &s)
+{
+    const auto first = s.find_first_not_of(" \t");
+    if (first == std::string::npos)
+        return {};
+    return s.substr(first, s.find_last_not_of(" \t") - first + 1);
+}
+
+// Replaces every "[name]" with a word of its own (MarkerTag + index into
+// `markers`), so that names may contain spaces.
+bool extractMarkers(const std::string &line, std::string &out, std::vector<std::string> &markers,
+                    std::string &error)
+{
+    out.clear();
+    for (size_t i = 0; i < line.size(); ++i) {
+        if (line[i] == ']') {
+            error = "unexpected ']'";
+            return false;
+        }
+        if (line[i] != '[') {
+            out += line[i];
+            continue;
+        }
+        const auto end = line.find_first_of("]|[", i + 1);
+        if (end == std::string::npos || line[end] != ']') {
+            error = "missing ']'";
+            return false;
+        }
+        std::string name = trimmed(line.substr(i + 1, end - i - 1));
+        if (name.empty()) {
+            error = "'[]' needs a variation name";
+            return false;
+        }
+        const std::string key = lower(name);
+        if (key == "auto")
+            name.clear();
+        else if (key == "main")
+            name = "Main";
+        out += ' ';
+        out += MarkerTag;
+        out += std::to_string(markers.size());
+        out += ' ';
+        markers.push_back(name);
+        i = end;
+    }
+    return true;
+}
+
+} // namespace
 
 Chord Progression::chordAt(int bar, int tickInBar, int ticksPerBar) const
 {
@@ -18,6 +80,23 @@ Chord Progression::chordAt(int bar, int tickInBar, int ticksPerBar) const
     return slots[std::min(idx, slots.size() - 1)];
 }
 
+const std::string &Progression::variationAt(int bar) const
+{
+    static const std::string none;
+    if (variations.empty() || bar < 0)
+        return none;
+    return variations[bar % variations.size()];
+}
+
+std::vector<std::string> Progression::variationNames() const
+{
+    std::vector<std::string> names;
+    for (const auto &v : variations)
+        if (!v.empty() && std::find(names.begin(), names.end(), v) == names.end())
+            names.push_back(v);
+    return names;
+}
+
 Progression Progression::transposed(int semitones) const
 {
     Progression p = *this;
@@ -30,15 +109,22 @@ Progression Progression::transposed(int semitones) const
 bool Progression::parse(const std::string &text, Progression &out, std::string &error)
 {
     out.bars.clear();
+    out.variations.clear();
     std::istringstream lines(text);
-    std::string line;
+    std::string rawLine, line;
+    std::vector<std::string> markers;
+    std::string variation; // the variation of the following bars
     int lineNo = 0;
 
-    while (std::getline(lines, line)) {
+    while (std::getline(lines, rawLine)) {
         ++lineNo;
-        const auto first = line.find_first_not_of(" \t\r");
-        if (first == std::string::npos || line[first] == '#')
+        const auto first = rawLine.find_first_not_of(" \t\r");
+        if (first == std::string::npos || rawLine[first] == '#')
             continue;
+        if (!extractMarkers(rawLine, line, markers, error)) {
+            error = "Line " + std::to_string(lineNo) + ": " + error;
+            return false;
+        }
 
         std::vector<std::string> segments;
         if (line.find('|') == std::string::npos) {
@@ -57,8 +143,13 @@ bool Progression::parse(const std::string &text, Progression &out, std::string &
             std::istringstream words(seg);
             std::vector<std::string> tokens;
             std::string tok;
-            while (words >> tok)
-                tokens.push_back(tok);
+            while (words >> tok) {
+                // A marker anywhere in a bar applies to the whole bar.
+                if (tok[0] == MarkerTag)
+                    variation = markers[std::stoul(tok.substr(1))];
+                else
+                    tokens.push_back(tok);
+            }
             if (tokens.empty())
                 continue;
 
@@ -68,6 +159,7 @@ bool Progression::parse(const std::string &text, Progression &out, std::string &
                     return false;
                 }
                 out.bars.push_back(out.bars.back());
+                out.variations.push_back(variation);
                 continue;
             }
 
@@ -92,6 +184,7 @@ bool Progression::parse(const std::string &text, Progression &out, std::string &
                 slots.push_back(*chord);
             }
             out.bars.push_back(std::move(slots));
+            out.variations.push_back(variation);
         }
     }
 
@@ -102,9 +195,9 @@ bool Progression::parse(const std::string &text, Progression &out, std::string &
     return true;
 }
 
-const std::vector<ProgressionPreset> &progressionPresets()
+const std::vector<BuiltinSong> &builtinSongs()
 {
-    static const std::vector<ProgressionPreset> presets = {
+    static const std::vector<BuiltinSong> songs = {
         {"12-Bar Blues in F", "Shuffle Blues", 100,
          "| F7  | Bb7 | F7 | F7 |\n"
          "| Bb7 | Bb7 | F7 | F7 |\n"
@@ -117,6 +210,13 @@ const std::vector<ProgressionPreset> &progressionPresets()
          "| Fm7 Bb7    | Ebmaj7 Ab7 | Dm7 G7 | Cm7 F7 |\n"},
         {"Pop I-V-vi-IV in G", "Pop Rock", 112,
          "| G | D | Em | C |\n"},
+        {"Pop Verse and Chorus in G", "Pop Rock", 112,
+         "[Main]\n"
+         "| G  | D | Em | C |\n"
+         "| G  | D | C  | % |\n"
+         "[B]\n"
+         "| C  | G | D  | Em |\n"
+         "| C  | G | D  | %  |\n"},
         {"Doo-Wop in C", "Ballad", 72,
          "| C | Am | F | G7 |\n"},
         {"Andalusian Cadence (Am)", "Pop Rock", 100,
@@ -131,7 +231,7 @@ const std::vector<ProgressionPreset> &progressionPresets()
         {"Reggae in D", "Reggae", 76,
          "| D | G | A | G |\n"},
     };
-    return presets;
+    return songs;
 }
 
 } // namespace mc

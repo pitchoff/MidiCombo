@@ -78,12 +78,37 @@ int main()
     check(!mc::Progression::parse("| C | Q7 |", p, err), "reject bad chord");
     check(mc::Progression::parse("C G Am F", p, err) && p.size() == 4, "line without bars");
 
-    for (const auto &preset : mc::progressionPresets()) {
-        check(mc::Progression::parse(preset.text, p, err), std::string("preset ") + preset.name + ": " + err);
-        bool styleFound = false;
+    check(p.variationAt(0).empty() && p.variationNames().empty(), "no variation markers");
+
+    // Variation markers
+    check(mc::Progression::parse("| C | [B] G |\n[One Drop]\n| Am | % |\n[auto] F [main] G", p, err),
+          "parse variation markers: " + err);
+    check(p.size() == 6 && p.variations.size() == 6, "markers are no bars");
+    check(p.variationAt(0).empty() && p.variationAt(1) == "B", "marker inside a bar applies to it");
+    check(p.variationAt(2) == "One Drop" && p.variationAt(3) == "One Drop", "marker line, '%' keeps it");
+    check(p.variationAt(4).empty() && p.variationAt(5) == "Main", "auto and main");
+    check(p.variationAt(7) == "B", "variationAt loops");
+    check(p.chordAt(1, 0, 48).name() == "G" && p.chordAt(4, 0, 48).name() == "F", "chords around markers");
+    check(p.variationNames() == std::vector<std::string>{"B", "One Drop", "Main"}, "variationNames");
+    check(p.transposed(2).variationAt(1) == "B", "transpose keeps markers");
+    check(!mc::Progression::parse("| [B C |", p, err), "unterminated marker");
+    check(!mc::Progression::parse("| C ] |", p, err), "stray ']'");
+    check(!mc::Progression::parse("| [ ] C |", p, err), "empty marker");
+    check(!mc::Progression::parse("[B]", p, err), "markers alone are empty");
+
+    for (const auto &song : mc::builtinSongs()) {
+        check(mc::Progression::parse(song.text, p, err), std::string("song ") + song.name + ": " + err);
+        const mc::Style *style = nullptr;
         for (const auto &s : mc::builtinStyles())
-            styleFound |= s.name == preset.style;
-        check(styleFound, std::string("preset style exists: ") + preset.style);
+            if (s.name == song.style)
+                style = &s;
+        check(style, std::string("song style exists: ") + song.style);
+        for (const auto &v : p.variationNames()) {
+            bool found = v == "Main";
+            for (size_t i = 0; style && i < style->variations.size(); ++i)
+                found |= style->variations[i].name == v;
+            check(found, std::string("song ") + song.name + " uses a variation of its style: " + v);
+        }
     }
     for (const auto &s : mc::builtinStyles()) {
         check(mc::validateStyle(s, err), err);
@@ -128,8 +153,12 @@ int main()
     badVariation = st;
     badVariation.variations = {{"B", {}, {}, "", ""}, {"B", {}, {}, "", ""}};
     check(!mc::validateStyle(badVariation, err), "variation names are unique");
-    badVariation.variations = {{"Main", {}, {}, "", ""}};
-    check(!mc::validateStyle(badVariation, err), "reserved variation name");
+    for (const char *name : {"Main", "main", "Auto", "random", "A [1]", "A|B"}) {
+        badVariation.variations = {{name, {}, {}, "", ""}};
+        check(!mc::validateStyle(badVariation, err), std::string("reserved variation name: ") + name);
+    }
+    badVariation.variations = {{"One Drop", {}, {}, "", ""}};
+    check(mc::validateStyle(badVariation, err), "variation name with a space: " + err);
     using mc::VariationMode;
     check(mc::nextVariation(VariationMode::InTurn, 0, 3, 0) == 1 && mc::nextVariation(VariationMode::InTurn, 2, 3, 0) == 0,
           "variations in turn");

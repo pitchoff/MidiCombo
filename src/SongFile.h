@@ -3,9 +3,9 @@
 #include <QList>
 #include <QString>
 
-// A song preset as stored in a preset file. Optional values (-1 / present
-// = false) leave the current setting or the style default untouched.
-struct PresetData {
+// A song as stored in a song file. Optional values (-1 / present = false)
+// leave the current setting or the style default untouched.
+struct SongData {
     struct Part {
         bool present = false;
         bool enabled = true;
@@ -28,8 +28,8 @@ struct PresetData {
 
 // File format:
 //
-// <midicombo-presets version="1">
-//   <preset name="My Blues">
+// <midicombo-songs version="1">
+//   <song name="My Blues">
 //     <style>Shuffle Blues</style>
 //     <tempo>100</tempo>
 //     <swing>0</swing>
@@ -39,7 +39,10 @@ struct PresetData {
 //     <band>
 //       <part name="bass" enabled="true" program="33" volume="100"/>
 //     </band>
-//   </preset>
-// </midicombo-presets>
-bool readPresetFile(const QString &path, QList<PresetData> &presets, QString &error);
-bool writePresetFile(const QString &path, const QList<PresetData> &presets, QString &error);
+//   </song>
+// </midicombo-songs>
+//
+// Files of older versions (<midicombo-presets> with <preset> elements) are
+// read as well.
+bool readSongFile(const QString &path, QList<SongData> &songs, QString &error);
+bool writeSongFile(const QString &path, const QList<SongData> &songs, QString &error);

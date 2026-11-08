@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Blues rock for MidiCombo. See country.xml for the pattern characters.
+
+  A Texas-style shuffle on a triplet grid (three steps per beat, the
+  middle one rests). The bass plays the boogie line, the overdriven
+  guitar chugs power chords (voicing="power") and a drawbar organ holds
+  the chords. The bass line takes the flat seventh, also over plain
+  major chords.
+-->
+<midicombo-styles version="1">
+
+    <!-- Shuffle: boogie bass, chugging guitar, organ on the downbeats. -->
+    <style name="Blues Rock">
+        <meter beats="4" steps-per-beat="3" bars="2"/>
+        <tempo>116</tempo>
+        <crash drum="crash"/>
+        <drums>
+            <row drum="ride"> X.x X.x X.x X.x | X.x X.x X.x X.x</row>
+            <row drum="snare">... X.. ... X.. | ... X.. ... X..</row>
+            <row drum="kick"> X.. ..x X.. ... | X.. ..x X.. ..x</row>
+        </drums>
+        <fill>
+            <row drum="snare">    x.x X.x ... ...</row>
+            <row drum="high-tom"> ... ... X.x ...</row>
+            <row drum="floor-tom">... ... ... X.X</row>
+            <row drum="kick">     X.. ... X.. ...</row>
+        </fill>
+        <bass program="33" velocity="102">R-R 3-3 5-5 6-6 | 7-7 6-6 5-5 3-A</bass>
+        <comp program="16" velocity="54">C-- --- --- --- | C-- --- ..c ..C</comp>
+        <guitar program="29" velocity="90" voicing="power">X.x X.x X.x X.x | X.x X.x X.x D.d</guitar>
+        <pad program="16" enabled="false"/>
+
+        <!-- Stop time: the band hits the one and leaves the rest to the soloist. -->
+        <variation name="Stop Time">
+            <drums>
+                <row drum="closed-hat">x.x x.x x.x x.x | x.x x.x x.x x.x</row>
+                <row drum="crash">     X.. ... ... ... | ... ... ... ...</row>
+                <row drum="snare">     X.. ... ... ... | X.. ... ... ...</row>
+                <row drum="kick">      X.. ... ... ... | X.. ... ... ...</row>
+            </drums>
+            <bass>R-- ... ... ... | R-- ... ... ..A</bass>
+            <comp>C-- ... ... ... | C-- ... ... ...</comp>
+            <guitar>D-- ... ... ... | D-- ... ... .dD</guitar>
+        </variation>
+    </style>
+
+</midicombo-styles>
