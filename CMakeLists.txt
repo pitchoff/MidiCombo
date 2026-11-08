@@ -63,3 +63,23 @@ foreach(size 16 24 32 48 64 128 256)
     install(FILES icons/midicombo-${size}.png DESTINATION share/icons/hicolor/${size}x${size}/apps
             RENAME midicombo.png)
 endforeach()
+install(FILES README.md syntax.md DESTINATION share/doc/midicombo)
+
+# Debian package: ./make-deb.sh, or cpack -G DEB in a build configured with
+# -DCMAKE_INSTALL_PREFIX=/usr.
+set(CPACK_PACKAGE_NAME midicombo)
+set(CPACK_PACKAGE_VENDOR "haleb")
+set(CPACK_PACKAGE_CONTACT "Heiko Leberer <heiko@haleb.de>")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Background band that follows your chords via ALSA MIDI")
+set(CPACK_PACKAGE_DESCRIPTION "MidiCombo plays drums, bass, piano, guitar and pad through the ALSA
+sequencer, following a chord progression or the chords played on a MIDI
+keyboard. Styles and songs are stored as XML and can be edited in the
+built-in style editor. A General MIDI synthesizer such as FluidSynth is
+needed to hear it.")
+set(CPACK_STRIP_FILES ON)
+set(CPACK_GENERATOR DEB)
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+set(CPACK_DEBIAN_PACKAGE_SECTION sound)
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "fluidsynth, fluid-soundfont-gm")
+include(CPack)

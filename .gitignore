@@ -1,3 +1,5 @@
 build/
 .qtcreator/
 *.user
+build-deb/
+bin/

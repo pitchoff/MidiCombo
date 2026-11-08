@@ -270,6 +270,19 @@ appears in the application menu. The icon source is `icons/midicombo.svg`;
 the PNG sizes are rendered from it with
 `inkscape midicombo.svg -w N -h N -o midicombo-N.png`.
 
+### Debian package
+
+```
+sudo apt install dpkg-dev       # in addition to the packages above
+./make-deb.sh
+sudo apt install ./bin/midicombo_0.1_amd64.deb
+```
+
+`make-deb.sh` builds in `build-deb/` with the prefix `/usr`, runs the tests
+and writes the package to `bin/`. The dependencies are taken from the
+libraries the program links; FluidSynth and the GM sound font are
+recommended. The version comes from `project()` in `CMakeLists.txt`.
+
 ## Sound
 
 MidiCombo produces MIDI, not audio. Start a General MIDI synth, e.g.:
