@@ -254,6 +254,53 @@ and the Jamaican styles Mento, Ska, Rocksteady and Rockers (installed to
 - Errors are reported with the line number, e.g. *"bass pattern has 7 steps,
   expected 8"*.
 
+## Importing MIDI files
+
+`midicombo-import` makes a style and a song out of a Standard MIDI File, so
+the band can play along with a tune you have as MIDI:
+
+```
+midicombo-import "Rebel Yell.mid"
+```
+
+It writes `rebel-yell-style.xml` and `rebel-yell-song.xml` and prints what
+it found. In MidiCombo, load the style file first (**File ▸ Load Styles…**),
+then the song file (**File ▸ Open Songs…**).
+
+What it does:
+
+- **Meter and tempo** come from the file; 6/8 and 12/8 count the dotted
+  quarter as the beat. If the tempo changes, the one that lasts longest is
+  used.
+- **Grid**: eighths, triplets (shuffles) or sixteenths, from the note
+  timing, plus swing when the off-beats come late.
+- **Parts**: channel 10 is the drums. Bass, comp (piano, organ), guitar and
+  pad are found by their General MIDI program and register. Other chord
+  instruments only help to find the chords, and single-line melodies
+  are ignored.
+- **Chords**: one to four per bar, from how long the notes sound, for the
+  song's progression.
+- **Patterns**: the file is cut into blocks of 2 bars. The most common block
+  becomes the main pattern, other blocks that recur become variations **B**
+  and **C**, and a last bar that differs from the rest (a fill) becomes the
+  fill. The song gets `[Main]`, `[B]` … markers where the sections change.
+
+| Option | Meaning |
+|---|---|
+| `-o`, `--output-dir DIR` | where to write the files (default: current directory) |
+| `-n`, `--name NAME` | name of the style and song (default: the title in the file, or the file name) |
+| `-b`, `--bars N` | pattern length, 1–8 bars (default 2) |
+| `-s`, `--steps N` | steps per beat instead of the detected grid |
+| `--variations N` | most variations besides the main pattern (default 2, 0 = none) |
+| `--drums`, `--bass`, `--comp`, `--guitar`, `--pad CH` | the MIDI channel (1–16) of that part, 0 = none |
+| `-f`, `--force` | overwrite existing files |
+| `-q`, `--quiet` | print only errors |
+
+The result is a starting point: open the style in the style editor to tidy
+the patterns, and check the chords in the song. Files with many
+instruments, or whose instruments use the wrong programs, work better with
+the channels given explicitly.
+
 ## Build
 
 ```
@@ -308,4 +355,5 @@ MIDI channels: 1 piano/comp, 2 bass, 3 pad, 4 MIDI thru, 5 guitar, 10 drums.
 | `MainWindow`, `Widgets` | Qt user interface |
 | `StyleEditor` | style editor window: drum grid, step tracks, test and apply |
 | `StyleFile`, `SongFile` | reading and writing the XML style and song files |
+| `MidiFile`, `MidiImport`, `ImportTool` | Standard MIDI File reader, analysis into a style and song, `midicombo-import` |
 | `icons/` | application icon (SVG source, rendered PNGs) and desktop entry |

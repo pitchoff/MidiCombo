@@ -19,6 +19,8 @@ pkg_check_modules(ALSA REQUIRED IMPORTED_TARGET alsa)
 add_library(midicombo_core STATIC
     src/Chord.cpp
     src/ChordDetector.cpp
+    src/MidiFile.cpp
+    src/MidiImport.cpp
     src/Progression.cpp
     src/Style.cpp
 )
@@ -40,10 +42,24 @@ add_executable(midicombo
 target_compile_options(midicombo PRIVATE -Wall -Wextra)
 target_link_libraries(midicombo PRIVATE midicombo_core Qt6::Widgets PkgConfig::ALSA Threads::Threads)
 
+# Command line tool: MIDI file -> style file and song file
+add_executable(midicombo-import
+    src/ImportTool.cpp
+    src/SongFile.cpp
+    src/StyleFile.cpp
+)
+target_compile_definitions(midicombo-import PRIVATE MIDICOMBO_VERSION="${PROJECT_VERSION}")
+target_compile_options(midicombo-import PRIVATE -Wall -Wextra)
+target_link_libraries(midicombo-import PRIVATE midicombo_core Qt6::Core)
+
 enable_testing()
 add_executable(test_core tests/test_core.cpp)
 target_link_libraries(test_core PRIVATE midicombo_core)
 add_test(NAME core COMMAND test_core)
+
+add_executable(test_import tests/test_import.cpp)
+target_link_libraries(test_import PRIVATE midicombo_core)
+add_test(NAME import COMMAND test_import)
 
 add_executable(test_songs tests/test_songs.cpp src/SongFile.cpp)
 target_include_directories(test_songs PRIVATE src)
@@ -55,7 +71,7 @@ target_compile_definitions(test_styles PRIVATE EXAMPLES_DIR="${CMAKE_SOURCE_DIR}
 target_link_libraries(test_styles PRIVATE midicombo_core Qt6::Core)
 add_test(NAME styles COMMAND test_styles)
 
-install(TARGETS midicombo RUNTIME DESTINATION bin)
+install(TARGETS midicombo midicombo-import RUNTIME DESTINATION bin)
 install(DIRECTORY examples/styles/ DESTINATION share/midicombo/styles)
 install(FILES icons/midicombo.desktop DESTINATION share/applications)
 install(FILES icons/midicombo.svg DESTINATION share/icons/hicolor/scalable/apps)
@@ -74,8 +90,9 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Background band that follows your chords 
 set(CPACK_PACKAGE_DESCRIPTION "MidiCombo plays drums, bass, piano, guitar and pad through the ALSA
 sequencer, following a chord progression or the chords played on a MIDI
 keyboard. Styles and songs are stored as XML and can be edited in the
-built-in style editor. A General MIDI synthesizer such as FluidSynth is
-needed to hear it.")
+built-in style editor; midicombo-import makes a style and a song from a
+MIDI file. A General MIDI synthesizer such as FluidSynth is needed to
+hear it.")
 set(CPACK_STRIP_FILES ON)
 set(CPACK_GENERATOR DEB)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)

@@ -154,6 +154,9 @@ them to the song list and applies the first.
 </midicombo-songs>
 ```
 
+`midicombo-import` writes song files from MIDI files; they use the same
+format, with every `<part>` given.
+
 Song files were called preset files in earlier versions. Files with
 `<midicombo-presets>` and `<preset>` elements are still read; MidiCombo
 writes the new names.
@@ -589,6 +592,7 @@ The package, like `cmake --install` with the prefix `/usr`, installs:
 | Path | Content |
 |---|---|
 | `/usr/bin/midicombo` | the program |
+| `/usr/bin/midicombo-import` | makes a style file and a song file from a MIDI file, see the README |
 | `/usr/share/midicombo/styles/` | the example style files. **File ▸ Load Styles…** starts here until another folder has been used. |
 | `/usr/share/doc/midicombo/` | `README.md` and this document, `syntax.md` |
 | `/usr/share/applications/midicombo.desktop` | the application menu entry |
