@@ -62,7 +62,8 @@ program number counted from 0 (for drums, the drum kit number).
 ## Styles
 
 Pop Rock, Ballad, Swing Jazz, Bossa Nova, Funk, Waltz (3/4), Reggae,
-Shuffle Blues. They are defined as step patterns in `src/Style.cpp`.
+Shuffle Blues, and the baroque Minuet and Sarabande (both 3/4, harpsichord
+and cello, no drums). They are defined as step patterns in `src/Style.cpp`.
 More styles come from style files or the style editor.
 
 ### Guitar
@@ -260,10 +261,10 @@ and the Jamaican styles Mento, Ska, Rocksteady and Rockers (installed to
 the band can play along with a tune you have as MIDI:
 
 ```
-midicombo-import "Rebel Yell.mid"
+midicombo-import "ProudMary.mid"
 ```
 
-It writes `rebel-yell-style.xml` and `rebel-yell-song.xml` and prints what
+It writes `proudmary-style.xml` and `proudmary-song.xml` and prints what
 it found. In MidiCombo, load the style file first (**File ▸ Load Styles…**),
 then the song file (**File ▸ Open Songs…**).
 

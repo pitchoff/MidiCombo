@@ -566,7 +566,8 @@ the synthesizer and soundfont.
 ### 5.4 Built-in styles
 
 `Pop Rock`, `Ballad`, `Swing Jazz`, `Bossa Nova`, `Funk`, `Waltz`, `Reggae`,
-`Shuffle Blues`.
+`Shuffle Blues`, `Minuet` (variations `Moving`, `Lute`), `Sarabande`
+(variation `Double`).
 
 Example style files in `examples/styles/` (installed to
 `/usr/share/midicombo/styles/`, see [5.6](#56-installed-files)):

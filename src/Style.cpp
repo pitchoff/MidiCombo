@@ -216,8 +216,9 @@ std::vector<Style> makeStyles()
         s.padProgram = 48;
         s.variations = {{"B", {}, {}, "R--- 5- | 3--- 5-", "C-.. C- | ..C- C-", ""}};
         s.guitar = "1-3- 5- | 1-3- 6-";
+        s.guitar = "d-D--- d-D---"; // lute strums, also leaning on beat two
         s.guitarProgram = 24;
-        s.guitarVelocity = 66;
+        s.guitarVelocity = 60;
         styles.push_back(s);
     }
     {
@@ -274,6 +275,59 @@ std::vector<Style> makeStyles()
         s.guitarVoicing = GuitarVoicing::Power;
         s.guitarProgram = 29; // overdriven guitar
         s.guitarVelocity = 82;
+        styles.push_back(s);
+    }
+    {
+        // Baroque minuet: no drums, harpsichord and cello as the continuo.
+        // The harpsichord marks all three beats with the first one leaning;
+        // "Moving" walks the bass in quarters, "Lute" lets a nylon guitar
+        // pick the chords instead of the harpsichord.
+        Style s;
+        s.name = "Minuet";
+        s.tempo = 112;
+        s.beatsPerBar = 3;
+        s.bars = 2;
+        s.crashNote = 0;
+        s.bass = "R----- R---5-";
+        s.comp = "C-c-c- C-..c-";
+        s.pianoProgram = 6;  // harpsichord
+        s.bassProgram = 42;  // cello
+        s.padProgram = 48;   // strings
+        s.bassVelocity = 84;
+        s.compVelocity = 70;
+        s.guitar = "1-5-6- 1-5-6-"; // a quiet lute along with the harpsichord
+        s.guitarProgram = 24;           // nylon guitar, standing in for a lute
+        s.guitarVelocity = 60;
+        s.variations = {
+            {"Moving", {}, {}, "R-3-5- 8-5-3-", "C-..c- C-..c-", ""},
+            {"Lute", {}, {}, "", "...... ......", "134565 134565"},
+        };
+        styles.push_back(s);
+    }
+    {
+        // Sarabande: slow 3/4 with the weight on the second beat, which the
+        // harpsichord holds. Strings sustain the harmony. "Double" is the
+        // baroque ornamented repeat: the harpsichord runs in eighths.
+        Style s;
+        s.name = "Sarabande";
+        s.tempo = 60;
+        s.beatsPerBar = 3;
+        s.bars = 2;
+        s.crashNote = 0;
+        s.bass = "R-8--- R-5---";
+        s.comp = "c-C--- c-C--c";
+        s.pianoProgram = 6;  // harpsichord
+        s.bassProgram = 42;  // cello
+        s.padProgram = 48;   // strings
+        s.padDefault = true;
+        s.bassVelocity = 80;
+        s.compVelocity = 66;
+        s.guitar = "d-D--- d-D---"; // lute strums, also leaning on beat two
+        s.guitarProgram = 24;
+        s.guitarVelocity = 60;
+        s.variations = {
+            {"Double", {}, {}, "R-5-8- R-5-3-", "123432 123432", ""},
+        };
         styles.push_back(s);
     }
 

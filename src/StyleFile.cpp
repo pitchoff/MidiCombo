@@ -1,5 +1,6 @@
 #include "StyleFile.h"
 
+#include <algorithm>
 #include <QFile>
 #include <QStringList>
 #include <QSaveFile>
@@ -257,7 +258,11 @@ void writeStyle(QXmlStreamWriter &xml, const mc::Style &s)
     xml.writeCharacters(formatPattern(s.comp, s));
     xml.writeEndElement();
 
-    if (!s.guitar.empty()) {
+    // Also written without a main pattern when only variations play the
+    // guitar, so that its instrument settings are kept.
+    const bool variationGuitar = std::any_of(s.variations.begin(), s.variations.end(),
+                                             [](const mc::StyleVariation &v) { return !v.guitar.empty(); });
+    if (!s.guitar.empty() || variationGuitar) {
         static const char *const voicings[] = {"full", "power", "high"};
         xml.writeStartElement("guitar");
         xml.writeAttribute("program", QString::number(s.guitarProgram));

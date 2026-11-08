@@ -230,6 +230,20 @@ const std::vector<BuiltinSong> &builtinSongs()
          "| Fmaj7 | Dm7 | Gm7 | C7 |\n"},
         {"Reggae in D", "Reggae", 76,
          "| D | G | A | G |\n"},
+        // Minuet in G major, BWV Anh. 114, from the Notebook for Anna Magdalena
+        // Bach (now attributed to Christian Petzold). Both halves are repeated;
+        // the second one walks the bass.
+        {"Minuet in G Major (Bach)", "Minuet", 112,
+         "[Main]\n"
+         "| G | G  | C  | G  | Am | G  | D G / | D |\n"
+         "| G | G  | C  | G  | Am | G  | D7    | G |\n"
+         "| G | G  | C  | G  | Am | G  | D G / | D |\n"
+         "| G | G  | C  | G  | Am | G  | D7    | G |\n"
+         "[Moving]\n"
+         "| G | D  | Em | A  | D  | Em | A7    | D |\n"
+         "| G | C  | G  | D7 | G  | C  | G D7 / | G |\n"
+         "| G | D  | Em | A  | D  | Em | A7    | D |\n"
+         "| G | C  | G  | D7 | G  | C  | G D7 / | G |\n"},
     };
     return songs;
 }
