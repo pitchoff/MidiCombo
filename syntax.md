@@ -9,6 +9,8 @@ This document describes the formats MidiCombo reads and writes:
    [style editor](#the-style-editor) and how it writes them
 5. [Reference tables](#5-reference-tables), including the
    [installed files](#56-installed-files) of the Debian package
+6. [MIDI import](#6-midi-import): how `midicombo-import` turns a MIDI file
+   into a style file and a song file
 
 Both XML formats are UTF-8, currently version `1`. Files with a higher
 `version` are rejected. Unknown elements are skipped, so newer files with
@@ -155,7 +157,7 @@ them to the song list and applies the first.
 ```
 
 `midicombo-import` writes song files from MIDI files; they use the same
-format, with every `<part>` given.
+format, with every `<part>` given (see [section 6](#6-midi-import)).
 
 Song files were called preset files in earlier versions. Files with
 `<midicombo-presets>` and `<preset>` elements are still read; MidiCombo
@@ -592,7 +594,7 @@ The package, like `cmake --install` with the prefix `/usr`, installs:
 | Path | Content |
 |---|---|
 | `/usr/bin/midicombo` | the program |
-| `/usr/bin/midicombo-import` | makes a style file and a song file from a MIDI file, see the README |
+| `/usr/bin/midicombo-import` | makes a style file and a song file from a MIDI file, see [section 6](#6-midi-import) |
 | `/usr/share/midicombo/styles/` | the example style files. **File ▸ Load Styles…** starts here until another folder has been used. |
 | `/usr/share/doc/midicombo/` | `README.md` and this document, `syntax.md` |
 | `/usr/share/applications/midicombo.desktop` | the application menu entry |
@@ -607,3 +609,212 @@ MidiCombo keeps its settings, including the list of loaded style files, in
 and your own song and style files in place. If a loaded style file no
 longer exists, the next start shows a message in the status bar and drops
 it from the list.
+
+---
+
+## 6. MIDI import
+
+```
+midicombo-import [options] file.mid
+```
+
+reads a Standard MIDI File and writes a style file ([section 4](#4-style-files))
+and a song file ([section 3](#3-song-files)) that uses it. Load the style
+file in MidiCombo first, then the song file. The files are a starting
+point: the patterns can be tidied in the style editor and the chords in
+the progression editor.
+
+### Options
+
+| Option | Meaning | Default |
+|---|---|---|
+| `-o`, `--output-dir DIR` | directory for the two files | the current directory |
+| `-n`, `--name NAME` | name of the style and of the song | the title in the file, else the file name |
+| `-b`, `--bars N` | pattern length, 1–8 bars | 2 |
+| `-s`, `--steps N` | steps per beat, a divisor of 12 | detected |
+| `--variations N` | most variations besides the main pattern, 0–24 | 2 |
+| `--drums CH`, `--bass CH`, `--comp CH`, `--guitar CH`, `--pad CH` | MIDI channel 1–16 of that part, `0` = the file has none | detected |
+| `-f`, `--force` | overwrite existing output files | existing files are an error |
+| `-q`, `--quiet` | print only errors | a report of what was found |
+
+The exit status is 0 on success, 1 if a file can't be read or written or
+an option is unknown, and 2 for a wrong option value or a missing MIDI
+file name.
+
+### Output files
+
+The file names come from the MIDI file's name, in lower case with every run
+of other characters than letters and digits replaced by `-`:
+`Rebel Yell.mid` gives `rebel-yell-style.xml` and `rebel-yell-song.xml`.
+Both contain one entry with the same name, so the song finds its style.
+
+### What is read from the MIDI file
+
+| MIDI | Use |
+|---|---|
+| format 0 and 1 | read. Format 2 and files with SMPTE time code are rejected. |
+| note on / note off | notes with their length. A note on with velocity 0 ends a note; notes never released end with their track. |
+| program change | the first one of each channel gives the instrument (for channel 10, the drum kit) |
+| tempo | the tempo that lasts longest |
+| time signature | the first one; later changes are reported and ignored |
+| name of the first track | the title, used as the name if it has at least two letters |
+
+Everything else (controllers, pitch bend, lyrics, SysEx) is skipped.
+
+### Meter, tempo and grid
+
+- *n*/8 with *n* = 6, 9, 12 … becomes *n*/3 beats of a dotted quarter
+  (`steps-per-beat` 3 or 6); every other meter keeps its numerator as the
+  beats, with the denominator's note value as the beat.
+- The tempo is converted to beats per minute of that beat and limited to
+  30–320.
+- The grid is chosen from where the drum, bass, comp and guitar notes
+  start: eighths (2 steps) if nearly all fall on eighths, triplets (3) if
+  they fit triplets better than sixteenths, else sixteenths (4).
+  `--steps` overrides this.
+- On an eighth or sixteenth grid, off-beats that come late on average give
+  `<swing>`: 0 % for straight, 100 % for triplet timing, in steps of 5 %,
+  ignored below 15 %. The unit is 8 on an eighth grid and 16 on a
+  sixteenth grid.
+
+### Which channel plays what
+
+Each channel gets one role. Channels set with an option come first; the
+others are assigned in this order, each role taking the free channel with
+the most notes that qualifies:
+
+| Role | Channel |
+|---|---|
+| drums | channel 10 |
+| bass | program 32–39 (basses) and played below middle C; else the lowest channel that plays mostly single notes, below D3 on average |
+| guitar | program 24–31 (guitars), playing chords (1.5 or more notes at a time on average) |
+| pad | program 48–55 (strings, choir) or 88–95 (synth pads), playing chords |
+| comp | program 0–23 (pianos, mallets, organs), playing chords; else any chord channel with notes shorter than two beats |
+| pad | any remaining chord channel with notes of two beats or longer |
+| chords only | the other channels that play chords: they help to find the chords but get no pattern |
+| melody | channels playing single notes: ignored |
+
+A second drum channel is ignored. If no channel plays chords, the chords
+are guessed from the bass.
+
+### Chords and the progression
+
+The song runs from the first to the last bar in which bass or chord
+channels play, so a drum count-in or a drum intro is left out.
+
+For every bar the notes of the bass and chord channels are weighted by how
+long they sound. The chord that explains them best is chosen from these
+qualities: major, minor, `7`, `maj7`, `m7`, `sus4`, `sus2`, `dim`,
+`m7b5`, `dim7`, `aug` and `5`:
+
+- chord tones count for it, other notes count against it, a missing third
+  or seventh costs more than a missing fifth, and the bass note on the
+  first half beat being the root helps;
+- `5`, `sus2` and `sus4` win only where the third is really missing;
+- the previous chord stays if it explains the notes nearly as well.
+
+A bar gets one chord, or two (one per half, in meters with an even number
+of beats above 2), or one per beat, whichever explains the notes best
+after a cost for every chord change inside the bar. Bars before the first
+chord take that chord. Slash chords are not written; the style's bass
+pattern plays the bass line.
+
+The progression has four bars per line, with `/` for a chord repeated
+inside a bar. If the style got variations, every section starts with a
+[variation marker](#variation-markers) on its own line:
+
+```
+[Main]
+| B5 | B5 | B5 | B5 |
+| F#m | F#m | Gmaj7 | Gmaj7 / D A5 |
+[B]
+| D | D | G | G Dsus2 |
+```
+
+### Main pattern, variations and fill
+
+The song is cut into blocks of `--bars` bars from its first bar; a shorter
+rest at the end is not used for patterns. Two blocks are similar when at
+least 80 % of their onsets match: each drum note per step, and the
+rhythm (not the notes) of bass, comp and guitar. With patterns of two bars
+or more, the last bar of a block is left out of this comparison, so that a
+fill does not make a block different.
+
+- The block with the most similar blocks starts the **main pattern**
+  group; the next ones start the variation groups **B**, **C** …, up to
+  `--variations`. A variation needs at least two blocks; one-off blocks
+  join the most similar group.
+- Each group's patterns come from its most typical block: the one most
+  similar to the others.
+- A block whose last bar has less than 70 % of its drum onsets in common
+  with the group's usual last bar ends in a **fill**. The fill that occurs
+  most often becomes `<fill>`; with one-bar patterns there is no fill.
+- In a variation, parts that are the same as in the main pattern are left
+  out, so they are taken from the main pattern. A variation in which the
+  drums rest gets a silent kick row.
+- A crash cymbal (notes 49 and 57) on the first step of the pattern is
+  removed and played by `<crash drum="crash"/>` at phrase starts instead.
+  If the file has no crash on the first step of a bar, `<crash drum="none"/>`
+  is written.
+
+### Pattern characters
+
+Notes are put on the nearest step. A note that starts less than half a
+step before the pattern belongs to its first step.
+
+**Drums.** One `<row>` per drum note, cymbals (higher notes) first and the
+kick last. The velocities are scaled so that the loudest tenth of the
+hits reaches 115, then:
+
+| Velocity | Char |
+|---|---|
+| 108 and up | `X` |
+| 80–107 | `x` |
+| 55–79 | `o` |
+| below 55 | `g` |
+
+**Bass.** The lowest note starting on a step is compared to the root of
+the chord at that point:
+
+| Semitones above the root | Char |
+|---|---|
+| 0, 1 | `R` (`8` if an octave or more above the lowest root in the pattern) |
+| 2–5 | `3` |
+| 6–8 | `5` |
+| 9 | `6` |
+| 10, 11 | `7` |
+
+A note other than the root that is a half step from the root of the next,
+different chord becomes `A`. A note is held with `-` until it ends or the
+next note starts.
+
+**Comp.** Two or more notes on a step are a chord: `C` if they are at
+least as loud as the channel's median velocity, `c` if softer, held with
+`-` while they sound. A single note becomes `1`–`9`: the number of the
+nearest chord tone (`1` root, `2` third, `3` fifth, `4` seventh), plus the
+number of chord tones (at most 4) from G4 up.
+
+**Guitar.** Two or more notes on a step are a strum. Short chords (0.6 of a
+step or less) below A3 are palm-muted chugs, `X`; the others are `D` or
+`U`, by the order of the notes (low to high is a down strum) or, if they
+start together, by the position (on the beat or an even step is down).
+Strums more than 8 velocity steps below the channel's median are written
+in lower case (`x`, `d`, `u`). A single note becomes the string `1`–`6`,
+counting from E2 in steps of a fourth. The voicing is `power` for chords of
+about three notes below middle C, `high` for small chords from D4 up, and
+`full` otherwise. Without a guitar channel, the style has no `<guitar>`.
+
+### Instruments and the song
+
+| Style value | From |
+|---|---|
+| `program` of `<bass>`, `<comp>`, `<guitar>`, `<pad>` | the program of that channel, else the style defaults 33, 0, 25, 48 |
+| `velocity` of `<bass>`, `<comp>`, `<guitar>` | the median velocity of that channel, limited to 30–120 |
+| `<pad enabled>` | `true` if a pad channel was found |
+| `<comp>`, `<bass>` without a channel | rests |
+
+The song file gets the name, the style, the tempo and the swing, the
+transpose 0 and the progression. It has no `<variation>` element; the
+markers in the progression choose the variations. `<band>` lists all five
+parts: a part is enabled if its channel was found, with that channel's
+program (for the drums, the drum kit), and the volume 100.
