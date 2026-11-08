@@ -7,7 +7,8 @@ This document describes the formats MidiCombo reads and writes:
 3. [Song files](#3-song-files): `<midicombo-songs>`
 4. [Style files](#4-style-files): `<midicombo-styles>`, including the
    [style editor](#the-style-editor) and how it writes them
-5. [Reference tables](#5-reference-tables)
+5. [Reference tables](#5-reference-tables), including the
+   [installed files](#56-installed-files) of the Debian package
 
 Both XML formats are UTF-8, currently version `1`. Files with a higher
 `version` are rejected. Unknown elements are skipped, so newer files with
@@ -562,10 +563,11 @@ the synthesizer and soundfont.
 `Pop Rock`, `Ballad`, `Swing Jazz`, `Bossa Nova`, `Funk`, `Waltz`, `Reggae`,
 `Shuffle Blues`.
 
-Example style files in `examples/styles/`: `country.xml`, `latin.xml`,
-`blues-and-folk.xml`, `blues-rock.xml`, `disco.xml`, `glam-and-sleaze.xml`,
-`grunge.xml`, `hard-rock.xml`, `heavy-metal.xml`, `jamaican.xml`,
-`symphonic-rock.xml`.
+Example style files in `examples/styles/` (installed to
+`/usr/share/midicombo/styles/`, see [5.6](#56-installed-files)):
+`country.xml`, `latin.xml`, `blues-and-folk.xml`, `blues-rock.xml`,
+`disco.xml`, `glam-and-sleaze.xml`, `grunge.xml`, `hard-rock.xml`,
+`heavy-metal.xml`, `jamaican.xml`, `symphonic-rock.xml`.
 
 ### 5.5 MIDI channels
 
@@ -577,3 +579,27 @@ Example style files in `examples/styles/`: `country.xml`, `latin.xml`,
 | 4 | MIDI thru (live mode) |
 | 5 | guitar |
 | 10 | drums |
+
+### 5.6 Installed files
+
+`./make-deb.sh` builds the Debian package `bin/midicombo_<version>_<arch>.deb`
+(install it with `sudo apt install ./bin/midicombo_0.1_amd64.deb`).
+The package, like `cmake --install` with the prefix `/usr`, installs:
+
+| Path | Content |
+|---|---|
+| `/usr/bin/midicombo` | the program |
+| `/usr/share/midicombo/styles/` | the example style files. **File ▸ Load Styles…** starts here until another folder has been used. |
+| `/usr/share/doc/midicombo/` | `README.md` and this document, `syntax.md` |
+| `/usr/share/applications/midicombo.desktop` | the application menu entry |
+| `/usr/share/icons/hicolor/*/apps/midicombo.*` | the icon, 16–256 px and SVG |
+
+The installed example styles are read-only. To change one, load it, edit it
+in the style editor and use **Save to File…** to write a copy to your home
+directory.
+
+MidiCombo keeps its settings, including the list of loaded style files, in
+`~/.config/MidiCombo/MidiCombo.conf`. Removing the package leaves this file
+and your own song and style files in place. If a loaded style file no
+longer exists, the next start shows a message in the status bar and drops
+it from the list.
